@@ -1,5 +1,6 @@
 from pyphysx import *
-
+import numpy as np
+from pyphysx_utils.urdf_robot_parser import quat_from_euler
 
 class HammerTool(RigidDynamic):
     """
@@ -7,7 +8,7 @@ class HammerTool(RigidDynamic):
     """
     def __init__(self, mass=0.1, head_length=0.2, head_width=0.1, head_cover_width=0.01,
                  head_static_friction=10., head_dynamic_friction=10., head_restitution=0.,
-                 handle_length=0.2, handle_width=0.04,
+                 handle_length=0.4, handle_width=0.04,
                  handle_static_friction=0.1, handle_dynamic_friction=0.1, **kwargs):
         # todo: write documentation, explain axis, sizes, etc
         super().__init__()
@@ -30,3 +31,7 @@ class HammerTool(RigidDynamic):
         self.attach_shape(hammer_handle)
         self.set_global_pose([0.0, 0.0, 0.5])
         self.set_mass(mass)
+
+    @property
+    def transform(self):
+        return ([0., -0.45, 0.12], quat_from_euler('xyz', [np.deg2rad(90), np.deg2rad(0), np.deg2rad(0)]))
