@@ -19,10 +19,11 @@ setuptools.setup(
         "Operating System :: OS Independent",
     ],
     python_requires='>=3.6',
-    install_requires=['numpy', 'quaternion', 'rlpyt', 'git+https://github.com/petrikvladimir/pyphysx_utils.git@master',
-                      'git+https://github.com/petrikvladimir/pyphysx_render.git@master',
-                      'git+https://github.com/petrikvladimir/pyphysx.git@master',
-                      'git+https://github.com/petrikvladimir/rlpyt_utils.git@master',
+    install_requires=['numpy', 'quaternion', 'rlpyt',
+                      'pyphysx_utils@git+https://github.com/petrikvladimir/pyphysx_utils.git@master',
+                      'pyphysx_render@git+https://github.com/petrikvladimir/pyphysx_render.git@master',
+                      'pyphysx@git+https://github.com/petrikvladimir/pyphysx.git@master',
+                      'rlpyt_utils@git+https://github.com/petrikvladimir/rlpyt_utils.git@master',
                       'torch',
                       'trimesh', ]
 )
