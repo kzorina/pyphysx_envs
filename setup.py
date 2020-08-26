@@ -11,7 +11,7 @@ setuptools.setup(
     description="Package contains a set of environments created with pyphysx library.",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url="https://github.com/pypa/sampleproject",
+    url="https://github.com/kzorina/pyphysx_envs",
     packages=setuptools.find_packages(),
     classifiers=[
         "Programming Language :: Python :: 3",
