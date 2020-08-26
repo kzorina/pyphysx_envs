@@ -2,7 +2,7 @@ from pyphysx_envs.envs.BaseEnv import BaseEnv
 from rlpyt.spaces.float_box import FloatBox
 from rlpyt_utils.utils import exponential_reward
 from rlpyt.envs.base import EnvInfo, Env, EnvStep
-from utils import get_tool, get_scene
+from pyphysx_envs.utils import get_tool, get_scene
 import quaternion as npq
 import numpy as np
 

@@ -1,8 +1,8 @@
 import numpy as np
 from pyphysx import *
-from scenes import HammerTaskScene, SpadeTaskScene
-from tools import HammerTool, SpadeTool
-from robot import PandaRobot
+from pyphysx_envs.scenes import HammerTaskScene, SpadeTaskScene
+from pyphysx_envs.tools import HammerTool, SpadeTool
+from pyphysx_envs.robot import PandaRobot
 
 
 def params_fill_default(params, params_default, add_noise=True):

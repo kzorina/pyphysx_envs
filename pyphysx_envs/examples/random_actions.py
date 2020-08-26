@@ -1,4 +1,4 @@
-from envs import ToolEnv, RobotEnv
+from pyphysx_envs.envs import ToolEnv, RobotEnv
 import numpy as np
 
 # env = ToolEnv(scene_name='spade', tool_name='spade', render=True, add_spheres=True,

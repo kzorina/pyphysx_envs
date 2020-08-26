@@ -1,5 +1,5 @@
 from rlpyt.envs.base import EnvInfo, Env, EnvStep
-from utils import params_fill_default
+from pyphysx_envs.utils import params_fill_default
 from pyphysx_utils.rate import Rate
 from pyphysx_render.renderer import PyPhysXParallelRenderer
 
