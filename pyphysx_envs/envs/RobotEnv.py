@@ -1,4 +1,4 @@
-from envs.BaseEnv import BaseEnv
+from pyphysx_envs.envs.BaseEnv import BaseEnv
 from rlpyt.spaces.float_box import FloatBox
 from rlpyt_utils.utils import exponential_reward
 from rlpyt.envs.base import EnvInfo, Env, EnvStep
