@@ -1,2 +1,2 @@
-from envs.ToolEnv import ToolEnv
-from envs.RobotEnv import RobotEnv
+from pyphysx_envs.envs.ToolEnv import ToolEnv
+from pyphysx_envs.envs.RobotEnv import RobotEnv
