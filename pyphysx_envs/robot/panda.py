@@ -36,6 +36,6 @@ class PandaRobot(URDFRobot):
 
     @property
     def init_q(self):
-        return np.array([0.9469, -0.2102, -0.5558, -1.0393, 1.7008, 0.9195, -0.9621])
+        return np.array([-0.0302, -1.0526,  0.6388, -1.3987,  1.2125,  0.7082,  2.0445])
 
 

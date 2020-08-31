@@ -1,5 +1,5 @@
 from pyphysx import *
-from pyphysx_utils.transformations import multiply_transformations, inverse_transform
+from pyphysx_utils.transformations import multiply_transformations, inverse_transform, quat_from_euler
 import numpy as np
 from pyphysx_utils.rate import Rate
 
@@ -29,9 +29,10 @@ def create_actor_box(pos, length_x=0.5, length_y=0.5, width=0.01, height=0.1, ma
 
 class SpadeTaskScene(Scene):
 
-    def __init__(self, add_spheres=False, sphere_color='sandybrown', sand_deposit_length=0.4,
+    def __init__(self, add_spheres=False, obs_add_sand=False, sphere_color='sandybrown', sand_deposit_length=0.4,
                  plane_static_friction=0.1, plane_dynamic_friction=0.1, plane_restitution=0.,
-                 sphere_static_friction=5., sphere_dynamic_friction=5., **kwargs
+                 sphere_static_friction=5., sphere_dynamic_friction=5.,
+                 on_sphere_reward=True, out_of_box_sphere_reward=False, **kwargs
                  ):
         super().__init__(scene_flags=[
             # SceneFlag.ENABLE_STABILIZATION,
@@ -42,8 +43,14 @@ class SpadeTaskScene(Scene):
                                   restitution=plane_restitution)
         self.mat_spheres = Material(static_friction=sphere_static_friction, dynamic_friction=sphere_dynamic_friction)
         self.add_spheres = add_spheres
+        self.obs_add_sand = obs_add_sand
         self.sphere_color = sphere_color
         self.sand_deposit_length = sand_deposit_length
+        self.demo_importance = 1.
+        self.offset = ([0., 0.045, 0.4], [1., 0., 0., 0.])
+        self.on_sphere_reward = on_sphere_reward
+        self.out_of_box_sphere_reward = out_of_box_sphere_reward
+
 
     def scene_setup(self):
         # self.renderer = renderer
@@ -51,6 +58,7 @@ class SpadeTaskScene(Scene):
         self.goal_box_act = create_actor_box([1., 1., 0.], color='brown')
         self.add_actor(self.goal_box_act)
         if self.add_spheres:
+            self.demo_importance = 0.2
             self.sand_box_act = create_actor_box([0., 0., 0.], length_x=self.sand_deposit_length,
                                                  length_y=self.sand_deposit_length, add_front_wall=False)
             self.add_actor(self.sand_box_act)
@@ -89,14 +97,67 @@ class SpadeTaskScene(Scene):
     def reset_object_positions(self, params):
         self.goal_box_act.set_global_pose(params['goal_box_position'])
         if self.add_spheres:
-            self.sand_box_act.set_global_pose(params['sand_buffer_position'])
+            self.sand_box_act.set_global_pose(
+                (params['sand_buffer_position'], quat_from_euler("xyz", [0., 0., params['sand_buffer_yaw']])))
             # reset sphere pos
             for i, sphere in enumerate(self.spheres_act):
                 sphere.set_global_pose(multiply_transformations(self.sphere_store_pos[i],
-                                                                params['sand_buffer_position']))
+                                                            params['sand_buffer_position']))
+
+    def get_num_spheres_in_boxes(self):
+        gpos = self.goal_box_act.get_global_pose()[0]
+        ll = np.array([-0.25, -0.25, 0.]) + gpos
+        ur = np.array([0.25, 0.25, 0.1]) + gpos
+        pts = np.array([sphere.get_global_pose()[0] for sphere in self.spheres_act])
+        inidx = np.all(np.logical_and(ll <= pts, pts <= ur), axis=1)
+        return np.sum(inidx)
+
+    def point_to_spade_ort(self, row, spade_tip_pose):
+        pos_ort, _ = multiply_transformations(spade_tip_pose, cast_transformation((np.array(row),
+                                      [1., 0., 0., 0.])))
+        return pos_ort
+
+    def get_number_of_spheres_above_spade(self):
+        sphere_pos = np.array([sphere.get_global_pose()[0] for sphere in self.spheres_act])
+        spade_pos, spade_quat = self.tool.get_global_pose()
+        spade_tip_pose = inverse_transform(multiply_transformations(cast_transformation((spade_pos, spade_quat)),
+                                                                  cast_transformation(self.offset)))
+        pts = np.apply_along_axis(lambda row: self.point_to_spade_ort(row, spade_tip_pose), 1, sphere_pos)
+        ur_sphere_pos = np.array([0.065, 0.1, 0.])
+        ll_sphere_pos = np.array([-0.065, -0.1, -0.11])
+        inidx = np.all(np.logical_and(ll_sphere_pos <= pts, pts <= ur_sphere_pos), axis=1)
+        return np.sum(inidx)
+
+    def point_in_circle(self, row):
+        return ((row[0] - self.params['sand_buffer_position'][0]) ** 2 +
+                (row[1] - self.params['sand_buffer_position'][1]) ** 2 < 0.4 ** 2) and row[2] < 0.3
+
+    def get_number_of_spheres_outside(self):
+        gpos = self.goal_box_act.get_global_pose()[0]
+        ll = np.array([-0.25, -0.25, 0.]) + gpos
+        ur = np.array([0.25, 0.25, 0.1]) + gpos
+        pts = np.array([sphere.get_global_pose()[0] for sphere in self.spheres_act])
+        inidx1 = np.all(np.logical_and(ll < pts, pts < ur), axis=1)
+        inidx2 = np.apply_along_axis(self.point_in_circle, 1, pts)
+
+        inidx = np.logical_and(np.logical_not(inidx1), np.logical_not(inidx2))
+        return np.sum(inidx)
 
     def get_environment_rewards(self):
-        return {}
+        rewards = {}
+        if self.add_spheres:
+            rewards['spheres'] = 0.1 * self.get_num_spheres_in_boxes()
+            if self.on_sphere_reward:
+                rewards['above_spheres'] = 0.001 * self.get_number_of_spheres_above_spade()
+            if self.out_of_box_sphere_reward:
+                rewards['outsiders'] = -0.01 * self.get_number_of_spheres_outside()
+        return rewards
+
+    def get_obs(self):
+        obs = []
+        if self.obs_add_sand:
+            obs.append(self.sand_box_act.get_global_pose()[0])
+        return obs
 
     @property
     def default_params(self):
@@ -106,7 +167,6 @@ class SpadeTaskScene(Scene):
             'sphere_mass': 0.0001
         },
             'variable': {
-                'nail_position': (1., 1., 0.),
                 'tool_init_position': (0., 0., 1.),
                 'goal_box_position': (0., 1., 0.),
                 'sand_buffer_position': (1., 1., 0.),

@@ -74,6 +74,9 @@ class HammerTaskScene(Scene):
     def get_environment_rewards(self):
         return {'nail_hammered': 1 if self.get_nail_z() < 0.001 else 0}
 
+    def get_obs(self):
+        return []
+
     @property
     def default_params(self):
         return {'constant': {},
