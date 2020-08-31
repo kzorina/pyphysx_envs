@@ -75,7 +75,8 @@ class HammerTaskScene(Scene):
         return {'nail_hammered': 1 if self.get_nail_z() < 0.001 else 0}
 
     def get_obs(self):
-        return []
+        obs = [[]]
+        return obs
 
     @property
     def default_params(self):

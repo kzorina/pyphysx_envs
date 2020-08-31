@@ -154,7 +154,7 @@ class SpadeTaskScene(Scene):
         return rewards
 
     def get_obs(self):
-        obs = []
+        obs = [[]]
         if self.obs_add_sand:
             obs.append(self.sand_box_act.get_global_pose()[0])
         return obs
