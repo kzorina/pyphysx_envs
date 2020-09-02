@@ -5,9 +5,9 @@ import torch
 
 
 class TalosArmRobot(URDFRobot):
-    def __init__(self, urdf_path="/home/kzorina/Work/example-robot-data/robots/talos_data/robots/talos_reduced.urdf",
-                 mesh_path="/home/kzorina/Work", robot_pose=(0., 0.25, 0.5), **kwargs):
-        super().__init__(urdf_path=urdf_path, mesh_path=mesh_path, kinematic=True)
+    def __init__(self, robot_urdf_path="/home/kzorina/Work/example-robot-data/robots/talos_data/robots/talos_reduced.urdf",
+                 robot_mesh_path="/home/kzorina/Work", robot_pose=(0., 0.25, 0.5), **kwargs):
+        super().__init__(urdf_path=robot_urdf_path, mesh_path=robot_mesh_path, kinematic=True)
         self.robot_pose = robot_pose
         self.attach_root_node_to_pose((self.robot_t0[:3, 3], npq.from_rotation_matrix(self.robot_t0[:3, :3])))
         self.disable_gravity()

@@ -51,7 +51,6 @@ class SpadeTaskScene(Scene):
         self.on_sphere_reward = on_sphere_reward
         self.out_of_box_sphere_reward = out_of_box_sphere_reward
 
-
     def scene_setup(self):
         # self.renderer = renderer
         self.add_actor(RigidStatic.create_plane(material=self.mat_plane))
@@ -59,8 +58,10 @@ class SpadeTaskScene(Scene):
         self.add_actor(self.goal_box_act)
         if self.add_spheres:
             self.demo_importance = 0.2
-            self.sand_box_act = create_actor_box([0., 0., 0.], length_x=self.sand_deposit_length,
-                                                 length_y=self.sand_deposit_length, add_front_wall=False)
+            self.sand_box_act = create_actor_box(
+                ([0., 0., 0.], quat_from_euler("xyz", [0., 0., 1.19])),
+                length_x=self.sand_deposit_length,
+                length_y=self.sand_deposit_length, add_front_wall=False)
             self.add_actor(self.sand_box_act)
             self.spheres_act = [RigidDynamic() for _ in range(self.default_params['constant']['num_spheres'])]
             for i, a in enumerate(self.spheres_act):
@@ -102,7 +103,7 @@ class SpadeTaskScene(Scene):
             # reset sphere pos
             for i, sphere in enumerate(self.spheres_act):
                 sphere.set_global_pose(multiply_transformations(self.sphere_store_pos[i],
-                                                            params['sand_buffer_position']))
+                                                                params['sand_buffer_position']))
 
     def get_num_spheres_in_boxes(self):
         gpos = self.goal_box_act.get_global_pose()[0]
@@ -114,14 +115,14 @@ class SpadeTaskScene(Scene):
 
     def point_to_spade_ort(self, row, spade_tip_pose):
         pos_ort, _ = multiply_transformations(spade_tip_pose, cast_transformation((np.array(row),
-                                      [1., 0., 0., 0.])))
+                                                                                   [1., 0., 0., 0.])))
         return pos_ort
 
     def get_number_of_spheres_above_spade(self):
         sphere_pos = np.array([sphere.get_global_pose()[0] for sphere in self.spheres_act])
         spade_pos, spade_quat = self.tool.get_global_pose()
         spade_tip_pose = inverse_transform(multiply_transformations(cast_transformation((spade_pos, spade_quat)),
-                                                                  cast_transformation(self.offset)))
+                                                                    cast_transformation(self.offset)))
         pts = np.apply_along_axis(lambda row: self.point_to_spade_ort(row, spade_tip_pose), 1, sphere_pos)
         ur_sphere_pos = np.array([0.065, 0.1, 0.])
         ll_sphere_pos = np.array([-0.065, -0.1, -0.11])

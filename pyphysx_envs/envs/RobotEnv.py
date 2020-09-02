@@ -62,11 +62,12 @@ class RobotEnv(BaseEnv):
     def reset(self):
         self.iter = 0
         self.scene.tool.set_global_pose(self.params['tool_init_position'])
-        self.scene.reset_object_positions(self.params)
+
         for i, name in enumerate(self.robot.get_joint_names()):
             self.q[name] = self.robot.init_q[i] # + np.random.normal(0., 0.01)
         self.robot.reset_pose(self.q)
         self.scene.tool.set_global_pose(multiply_transformations(self.robot.last_link.get_global_pose(), self.scene.tool.transform))
+        self.scene.reset_object_positions(self.params)
         self.scene.simulation_time = 0.
         return self.get_obs()
 
@@ -80,7 +81,7 @@ class RobotEnv(BaseEnv):
             self.scene.simulate(self.rate.period() / self.sub_steps)
         if self.render:
             self.renderer.render_scene(self.scene)
-            for _ in range(self.sleep_steps):
+            for _ in range(self.sleep_steps*5):
                 self.rate.sleep()
         tool_pos, tool_quat = self.scene.tool.get_global_pose()
         rewards = {}
@@ -96,6 +97,6 @@ class RobotEnv(BaseEnv):
             rewards['demo_orientation'] = exponential_reward([npq.rotation_intrinsic_distance(tool_quat, dquat)],
                                                              scale=self.scene.demo_importance * 0.5, b=1)
 
-
+        print(rewards)
         return EnvStep(self.get_obs(), sum(rewards.values()) / self.horizon,
                        self.iter == self.batch_T, EnvInfo())
