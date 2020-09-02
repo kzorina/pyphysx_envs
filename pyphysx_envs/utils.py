@@ -2,7 +2,7 @@ import numpy as np
 from pyphysx import *
 from pyphysx_envs.scenes import HammerTaskScene, SpadeTaskScene
 from pyphysx_envs.tools import HammerTool, SpadeTool
-from pyphysx_envs.robot import PandaRobot
+from pyphysx_envs.robot import PandaRobot, TalosArmRobot
 
 
 def params_fill_default(params, params_default, add_noise=True):
@@ -37,5 +37,7 @@ def get_tool(tool_name, **kwargs):
 def get_robot(robot_name, **kwargs):
     if robot_name == 'panda':
         return PandaRobot(**kwargs)
+    elif robot_name == 'talos_arm':
+        return TalosArmRobot(**kwargs)
     else:
         raise NotImplementedError("Unknown robot '{}'".format(robot_name))

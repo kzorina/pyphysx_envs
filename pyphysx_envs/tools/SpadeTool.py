@@ -22,7 +22,14 @@ class SpadeTool(RigidDynamic):
         self.set_mass(mass)
         self.disable_gravity()
 
+# TODO: think about better way to tranform tool position, both based on tool and on robot
+    # for panda
+    # @property
+    # def transform(self):
+    #     return ([-0.0223, -0.0223, 0.133],
+    #             quat_from_euler('xyz', [np.deg2rad(-90), np.deg2rad(0), np.deg2rad(90 + 45)]))
+
     @property
     def transform(self):
-        return ([-0.0223, -0.0223, 0.133],
-                quat_from_euler('xyz', [np.deg2rad(-90), np.deg2rad(0), np.deg2rad(90 + 45)]))
+        return ([0., 0., -0.133],
+                quat_from_euler('xyz', [np.deg2rad(-90), np.deg2rad(-90), np.deg2rad(90)]))
