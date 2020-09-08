@@ -37,8 +37,8 @@ class TalosArmRobot(URDFRobot):
 
     @property
     def max_dq_limit(self):
-        return np.array([2.175, 2.175, 2.175, 2.175, 2.175, 2.175, 2.61, 2.61, 2.61])
+        return np.array([2.175, 2.175, 2.175, 2.175, 2.175, 2.175, 2.61, 2.61, 2.61, 2.61])
 
     @property
     def init_q(self):
-        return np.array([0., 0., -0.0302, -1.0526, 0.6388, -1.3987, 1.2125, 0.7082, 2.0445])
+        return np.array([0., 0., -0.0302, -1.0526, 0.6388, -1.3987, 1.2125, 0.7082, 2.0445, 0.])
