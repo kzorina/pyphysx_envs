@@ -10,7 +10,7 @@ demo_params = pickle.load(open(filename, 'rb'))
 
 env = RobotEnv(scene_name='spade', tool_name='spade', robot_name='talos_arm', render=True, add_spheres=True,
                spade_mesh_path='/home/kzorina/Work/pyphysx_envs/pyphysx_envs/data/spade_mesh.obj', 
-                params=demo_params['spade'],
+                params=demo_params['spade'], robot_pose=(0.3, 0.25, 0.3), demonstration_poses=demo_params['poses']
                )
 i = 0
 while env.renderer.is_running():
@@ -18,5 +18,6 @@ while env.renderer.is_running():
     env.step(action)
     # print(env.robot.links['panda_link6'].actor.get_global_pose())
     i += 1
+    print(i)
     if i % 100 == 0:
         print(env.reset())

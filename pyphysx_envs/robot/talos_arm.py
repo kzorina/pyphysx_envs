@@ -13,7 +13,7 @@ class TalosArmRobot(URDFRobot):
         self.disable_gravity()
         self.reset_pose()
         self.movable_joints_name = ['torso_1_joint'] + ['arm_left_{}_joint'.format(i) for i in range(1, 8)] + [
-            'gripper_left_joint']
+            'wrist_left_ft_joint']
         self.movable_joints = {k: v for k, v in self.movable_joints.items() if k in self.movable_joints_name}
 
     @property
@@ -33,7 +33,7 @@ class TalosArmRobot(URDFRobot):
 
     @property
     def last_link(self):
-        return self.links['gripper_left_base_link'].actor
+        return self.links['wrist_left_ft_link'].actor
 
     @property
     def max_dq_limit(self):

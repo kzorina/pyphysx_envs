@@ -8,6 +8,7 @@ import numpy as np
 import torch
 from pyphysx import *
 from pyphysx_utils.transformations import multiply_transformations
+from robot_kinematics_function import dh_transformation, forward_kinematic
 
 
 class RobotEnv(BaseEnv):
@@ -40,6 +41,10 @@ class RobotEnv(BaseEnv):
             self.q[name] = 0.
         self.dq_limit = self.robot.max_dq_limit * dq_limit_percentage
         self.demonstration_poses = demonstration_poses
+        self.t_tool = torch.eye(4)
+        self.t_tool[:3, 3] = torch.tensor(self.scene.tool.transform[0])
+        self.t_tool[:3, :3] = torch.tensor(
+            npq.as_rotation_matrix(self.scene.tool.transform[1]))
         self.reset()
 
     def get_obs(self, return_space=False):
@@ -64,7 +69,7 @@ class RobotEnv(BaseEnv):
         self.scene.tool.set_global_pose(self.params['tool_init_position'])
 
         for i, name in enumerate(self.robot.get_joint_names()):
-            self.q[name] = self.robot.init_q[i] # + np.random.normal(0., 0.01)
+            self.q[name] = self.robot.init_q[i] + np.random.normal(0., 0.01)
         self.robot.reset_pose(self.q)
         self.scene.tool.set_global_pose(multiply_transformations(self.robot.last_link.get_global_pose(), self.scene.tool.transform))
         self.scene.reset_object_positions(self.params)
@@ -97,6 +102,6 @@ class RobotEnv(BaseEnv):
             rewards['demo_orientation'] = exponential_reward([npq.rotation_intrinsic_distance(tool_quat, dquat)],
                                                              scale=self.scene.demo_importance * 0.5, b=1)
 
-        print(rewards)
+        # print(rewards)
         return EnvStep(self.get_obs(), sum(rewards.values()) / self.horizon,
                        self.iter == self.batch_T, EnvInfo())
