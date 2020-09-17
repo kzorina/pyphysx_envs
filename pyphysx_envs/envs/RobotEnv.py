@@ -8,7 +8,7 @@ import numpy as np
 import torch
 from pyphysx import *
 from pyphysx_utils.transformations import multiply_transformations
-from robot_kinematics_function import dh_transformation, forward_kinematic
+from pyphysx_envs.robot_kinematics_function import dh_transformation, forward_kinematic
 
 
 class RobotEnv(BaseEnv):
@@ -28,7 +28,7 @@ class RobotEnv(BaseEnv):
         if self.demonstration_poses is not None:
             self.params['tool_init_position'] = self.demonstration_poses[0]
         self.scene.tool.set_global_pose(multiply_transformations(self.robot.last_link.get_global_pose(), self.scene.tool.transform))
-        joint = D6Joint(self.robot.last_link, self.scene.tool, local_pose0=self.scene.tool.transform)
+        joint = D6Joint(self.robot.last_link, self.scene.tool, local_pose0=self.robot.tool_transform)
         self.scene.add_actor(self.scene.tool)
 
         self._action_space = FloatBox(low=-3.14 * np.ones(len(self.robot.get_joint_names())),
@@ -42,10 +42,12 @@ class RobotEnv(BaseEnv):
         self.dq_limit = self.robot.max_dq_limit * dq_limit_percentage
         self.demonstration_poses = demonstration_poses
         self.t_tool = torch.eye(4)
-        self.t_tool[:3, 3] = torch.tensor(self.scene.tool.transform[0])
+        self.t_tool[:3, 3] = torch.tensor(self.robot.tool_transform[0])
         self.t_tool[:3, :3] = torch.tensor(
-            npq.as_rotation_matrix(self.scene.tool.transform[1]))
+            npq.as_rotation_matrix(self.robot.tool_transform[1]))
         self.reset()
+        if not self.old_renderer:
+            self.renderer.add_physx_scene(self.scene)
 
     def get_obs(self, return_space=False):
         scene_obs = self.scene.get_obs()
@@ -71,7 +73,7 @@ class RobotEnv(BaseEnv):
         for i, name in enumerate(self.robot.get_joint_names()):
             self.q[name] = self.robot.init_q[i] + np.random.normal(0., 0.01)
         self.robot.reset_pose(self.q)
-        self.scene.tool.set_global_pose(multiply_transformations(self.robot.last_link.get_global_pose(), self.scene.tool.transform))
+        self.scene.tool.set_global_pose(multiply_transformations(self.robot.last_link.get_global_pose(), self.robot.tool_transform))
         self.scene.reset_object_positions(self.params)
         self.scene.simulation_time = 0.
         return self.get_obs()
@@ -85,7 +87,7 @@ class RobotEnv(BaseEnv):
             self.robot.update(self.rate.period() / self.sub_steps)
             self.scene.simulate(self.rate.period() / self.sub_steps)
         if self.render:
-            self.renderer.render_scene(self.scene)
+            self.render_scene()
             for _ in range(self.sleep_steps*5):
                 self.rate.sleep()
         tool_pos, tool_quat = self.scene.tool.get_global_pose()

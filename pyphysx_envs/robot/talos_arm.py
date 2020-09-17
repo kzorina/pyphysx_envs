@@ -1,19 +1,19 @@
 from pyphysx_utils.urdf_robot_parser import URDFRobot
 import numpy as np
 import quaternion as npq
+from pyphysx_utils.urdf_robot_parser import quat_from_euler
 import torch
 
 
 class TalosArmRobot(URDFRobot):
-    def __init__(self, robot_urdf_path="/home/kzorina/Work/example-robot-data/robots/talos_data/robots/talos_reduced.urdf",
+    def __init__(self, robot_urdf_path="/home/kzorina/Work/example-robot-data/robots/talos_data/robots/talos_body_left_arm.urdf",
                  robot_mesh_path="/home/kzorina/Work", robot_pose=(0., 0.25, 0.5), **kwargs):
         super().__init__(urdf_path=robot_urdf_path, mesh_path=robot_mesh_path, kinematic=True)
         self.robot_pose = robot_pose
         self.attach_root_node_to_pose((self.robot_t0[:3, 3], npq.from_rotation_matrix(self.robot_t0[:3, :3])))
         self.disable_gravity()
         self.reset_pose()
-        self.movable_joints_name = ['torso_1_joint'] + ['arm_left_{}_joint'.format(i) for i in range(1, 8)] + [
-            'wrist_left_ft_joint']
+        self.movable_joints_name = ['torso_1_joint'] + ['arm_left_{}_joint'.format(i) for i in range(1, 8)]
         self.movable_joints = {k: v for k, v in self.movable_joints.items() if k in self.movable_joints_name}
 
     @property
@@ -37,8 +37,13 @@ class TalosArmRobot(URDFRobot):
 
     @property
     def max_dq_limit(self):
-        return np.array([2.175, 2.175, 2.175, 2.175, 2.175, 2.175, 2.61, 2.61, 2.61])
+        return np.array([2.175, 2.175, 2.175, 2.175, 2.175, 2.175, 2.61, 2.61])
 
     @property
     def init_q(self):
-        return np.array([0., 0., -0.0302, -1.0526, 0.6388, -1.3987, 1.2125, 0.7082, 2.0445])
+        return np.array([0., -0.0302, -1.0526, 0.6388, -1.3987, 1.2125, 0.7082, 2.0445])
+
+    @property
+    def tool_transform(self):
+        return ([0., 0., -0.133],
+                quat_from_euler('xyz', [np.deg2rad(-90), np.deg2rad(0), np.deg2rad(90)]))

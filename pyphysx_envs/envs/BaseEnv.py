@@ -2,12 +2,13 @@ from rlpyt.envs.base import EnvInfo, Env, EnvStep
 from pyphysx_envs.utils import params_fill_default
 from pyphysx_utils.rate import Rate
 from pyphysx_render.renderer import PyPhysXParallelRenderer
+from pyphysx_render.pyrender import PyPhysxViewer
 
 
 class BaseEnv(Env):
 
     def __init__(self, render=False, render_dict=None, batch_T=100, params=None, rate=24, demonstration_fps=24,
-                 obs_add_time=True, demonstration_poses=None, **kwargs):
+                 obs_add_time=True, demonstration_poses=None, old_renderer=True, **kwargs):
         super().__init__()
         self.render = render
         self.batch_T = batch_T
@@ -16,9 +17,19 @@ class BaseEnv(Env):
         self.demonstration_fps = demonstration_fps
         self.obs_add_time = obs_add_time
         if self.render:
-            self.renderer = PyPhysXParallelRenderer(render_window_kwargs=dict() if render_dict is None else render_dict)
+            self.old_renderer = old_renderer
+            if old_renderer:
+                self.renderer = PyPhysXParallelRenderer(render_window_kwargs=dict() if render_dict is None else render_dict)
+            else:
+                self.renderer = PyPhysxViewer()
+                # self.renderer.add_physx_scene(self.scene)
         self.demonstration_poses = demonstration_poses
 
+    def render_scene(self):
+        if self.old_renderer == True:
+            self.renderer.render_scene(self.scene)
+        else:
+            self.renderer.update()
 
     def step(self, action):
         raise NotImplementedError

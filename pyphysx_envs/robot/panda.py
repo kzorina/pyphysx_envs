@@ -1,11 +1,12 @@
 from pyphysx_utils.urdf_robot_parser import URDFRobot
 import numpy as np
 import quaternion as npq
+from pyphysx_utils.urdf_robot_parser import quat_from_euler
 import torch
 
 class PandaRobot(URDFRobot):
-    def __init__(self, urdf_path="panda.urdf", robot_pose=(0., -0.25, -0.2), **kwargs):
-        super().__init__(urdf_path=urdf_path, kinematic=True)
+    def __init__(self, robot_urdf_path="panda.urdf", robot_pose=(0., -0.25, -0.2), **kwargs):
+        super().__init__(urdf_path=robot_urdf_path, kinematic=True)
         self.robot_pose = robot_pose
         self.attach_root_node_to_pose((self.robot_t0[:3, 3], npq.from_rotation_matrix(self.robot_t0[:3, :3])))
         self.disable_gravity()
@@ -37,5 +38,10 @@ class PandaRobot(URDFRobot):
     @property
     def init_q(self):
         return np.array([-0.0302, -1.0526,  0.6388, -1.3987,  1.2125,  0.7082,  2.0445])
+
+    @property
+    def tool_transform(self):
+        return ([-0.0223, -0.0223, 0.133],
+                quat_from_euler('xyz', [np.deg2rad(-90), np.deg2rad(0), np.deg2rad(90 + 45)]))
 
 

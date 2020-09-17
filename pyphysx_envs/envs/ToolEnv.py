@@ -11,10 +11,10 @@ class ToolEnv(BaseEnv):
 
     def __init__(self, scene_name='spade', tool_name='spade', env_params=None, **kwargs):
         self.scene = get_scene(scene_name, **kwargs)
-        self.tool = get_tool(tool_name, **kwargs)
+        self.scene.tool = get_tool(tool_name, **kwargs)
         super().__init__(**kwargs)
         self.scene.scene_setup()
-        self.scene.add_actor(self.tool)
+        self.scene.add_actor(self.scene.tool)
         if self.demonstration_poses is not None:
             self.params['tool_init_position'] = self.demonstration_poses[0]
         self._action_space = FloatBox(low=-4 * np.ones(6), high=4 * np.ones(6))
@@ -22,6 +22,8 @@ class ToolEnv(BaseEnv):
         self.sub_steps = 10
         self.sleep_steps = 10
         self.reset()
+        if not self.old_renderer:
+            self.renderer.add_physx_scene(self.scene)
 
     def get_obs(self, return_space=False):
         if return_space:
@@ -31,7 +33,7 @@ class ToolEnv(BaseEnv):
                 low.append(0)
                 high.append(10)
             return FloatBox(low=low, high=high)  # spade_pose + goal_box_pos + sand pos
-        tool_pos, tool_quat = self.tool.get_global_pose()
+        tool_pos, tool_quat = self.scene.tool.get_global_pose()
         obs_list = [tool_pos, npq.as_float_array(tool_quat)]
         if self.obs_add_time:
             t = self.scene.simulation_time
@@ -40,7 +42,7 @@ class ToolEnv(BaseEnv):
 
     def reset(self):
         self.iter = 0
-        self.tool.set_global_pose(self.params['tool_init_position'])
+        self.scene.tool.set_global_pose(self.params['tool_init_position'])
         self.scene.reset_object_positions(self.params)
         self.scene.simulation_time = 0.
         return self.get_obs()
@@ -48,14 +50,14 @@ class ToolEnv(BaseEnv):
     def step(self, action):
         self.iter += 1
         for _ in range(self.sub_steps):
-            self.tool.set_linear_velocity(action[:3])
-            self.tool.set_angular_velocity(action[3:])
+            self.scene.tool.set_linear_velocity(action[:3])
+            self.scene.tool.set_angular_velocity(action[3:])
             self.scene.simulate(self.rate.period() / self.sub_steps)
         if self.render:
-            self.renderer.render_scene(self.scene)
+            self.render_scene()
             for _ in range(self.sleep_steps):
                 self.rate.sleep()
-        tool_pos, tool_quat = self.tool.get_global_pose()
+        tool_pos, tool_quat = self.scene.tool.get_global_pose()
         rewards = {}
         rewards.update(self.scene.get_environment_rewards())
         if self.demonstration_poses is not None:
