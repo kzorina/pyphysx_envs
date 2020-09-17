@@ -24,6 +24,7 @@ class BaseEnv(Env):
                 self.renderer = PyPhysxViewer()
                 # self.renderer.add_physx_scene(self.scene)
         self.demonstration_poses = demonstration_poses
+        self.scene.demo_importance = 1.
 
     def render_scene(self):
         if self.old_renderer == True:
