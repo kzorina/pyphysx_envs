@@ -41,7 +41,7 @@ class PandaRobot(URDFRobot):
 
     @property
     def tool_transform(self):
-        return ([-0.0223, -0.0223, 0.133],
+        return ([0, 0, 0.133],
                 quat_from_euler('xyz', [np.deg2rad(-90), np.deg2rad(0), np.deg2rad(90 + 45)]))
 
 

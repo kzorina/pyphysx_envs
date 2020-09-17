@@ -16,6 +16,8 @@ class HammerTool(RigidDynamic):
                                  dynamic_friction=head_dynamic_friction,
                                  restitution=head_restitution)
         self.mat_handle = Material(static_friction=handle_static_friction, dynamic_friction=handle_dynamic_friction)
+        self.head_width = head_width
+        self.head_length = head_length
         hammer_head = Shape.create_box([head_width, head_length, head_width], self.mat_head)
         hammer_head.set_flag(ShapeFlag.SIMULATION_SHAPE, False)
         hammer_head_up = Shape.create_box([head_width, head_cover_width, head_width], self.mat_head)
@@ -25,6 +27,7 @@ class HammerTool(RigidDynamic):
         self.attach_shape(hammer_head)
         self.attach_shape(hammer_head_up)
         self.attach_shape(hammer_head_bot)
+        self.handle_length = handle_length
         hammer_handle: Shape = Shape.create_box([handle_width, handle_width, handle_length], self.mat_head)
         hammer_handle.set_flag(ShapeFlag.SIMULATION_SHAPE, False)
         hammer_handle.set_local_pose([0., 0., - handle_length / 2 - head_width / 2])
@@ -34,4 +37,5 @@ class HammerTool(RigidDynamic):
 
     @property
     def transform(self):
-        return ([0., -0.45, 0.12], quat_from_euler('xyz', [np.deg2rad(90), np.deg2rad(0), np.deg2rad(0)]))
+        # return ([0., 0., self.handle_length + self.head_width / 2], quat_from_euler('xyz', [np.deg2rad(0), np.deg2rad(0), np.deg2rad(0)]))
+        return ([0, 0., self.handle_length + self.head_width / 2], quat_from_euler('xyz', [np.deg2rad(0), np.deg2rad(0), np.deg2rad(0)]))

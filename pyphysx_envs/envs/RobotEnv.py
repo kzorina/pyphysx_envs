@@ -19,6 +19,7 @@ class RobotEnv(BaseEnv):
         self.scene = get_scene(scene_name, **kwargs)
         self.scene.tool = get_tool(tool_name, **kwargs)
         self.robot = get_robot(robot_name, **kwargs)
+        self.tool_transform = multiply_transformations(self.robot.tool_transform, self.scene.tool.transform)
         super().__init__(**kwargs)
         self.scene.scene_setup()
         # self.scene.add_actor(self.scene.tool)
@@ -27,8 +28,8 @@ class RobotEnv(BaseEnv):
             joint.configure_drive(stiffness=1e6, damping=1e5, force_limit=1e5, is_acceleration=False)
         if self.demonstration_poses is not None:
             self.params['tool_init_position'] = self.demonstration_poses[0]
-        self.scene.tool.set_global_pose(multiply_transformations(self.robot.last_link.get_global_pose(), self.scene.tool.transform))
-        joint = D6Joint(self.robot.last_link, self.scene.tool, local_pose0=self.robot.tool_transform)
+        self.scene.tool.set_global_pose(multiply_transformations(self.robot.last_link.get_global_pose(), self.tool_transform))
+        joint = D6Joint(self.robot.last_link, self.scene.tool, local_pose0=self.tool_transform)
         self.scene.add_actor(self.scene.tool)
 
         self._action_space = FloatBox(low=-3.14 * np.ones(len(self.robot.get_joint_names())),
@@ -42,9 +43,9 @@ class RobotEnv(BaseEnv):
         self.dq_limit = self.robot.max_dq_limit * dq_limit_percentage
         self.demonstration_poses = demonstration_poses
         self.t_tool = torch.eye(4)
-        self.t_tool[:3, 3] = torch.tensor(self.robot.tool_transform[0])
+        self.t_tool[:3, 3] = torch.tensor(self.tool_transform[0])
         self.t_tool[:3, :3] = torch.tensor(
-            npq.as_rotation_matrix(self.robot.tool_transform[1]))
+            npq.as_rotation_matrix(self.tool_transform[1]))
         self.reset()
         if self.render:
             if not self.old_renderer:
@@ -74,7 +75,7 @@ class RobotEnv(BaseEnv):
         for i, name in enumerate(self.robot.get_joint_names()):
             self.q[name] = self.robot.init_q[i] + np.random.normal(0., 0.01)
         self.robot.reset_pose(self.q)
-        self.scene.tool.set_global_pose(multiply_transformations(self.robot.last_link.get_global_pose(), self.robot.tool_transform))
+        self.scene.tool.set_global_pose(multiply_transformations(self.robot.last_link.get_global_pose(), self.tool_transform))
         self.scene.reset_object_positions(self.params)
         self.scene.simulation_time = 0.
         return self.get_obs()
