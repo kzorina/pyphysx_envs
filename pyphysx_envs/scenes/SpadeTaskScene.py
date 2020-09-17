@@ -32,7 +32,7 @@ class SpadeTaskScene(Scene):
     def __init__(self, add_spheres=False, obs_add_sand=False, sphere_color='sandybrown', sand_deposit_length=0.4,
                  plane_static_friction=0.1, plane_dynamic_friction=0.1, plane_restitution=0.,
                  sphere_static_friction=5., sphere_dynamic_friction=5.,
-                 on_sphere_reward=True, out_of_box_sphere_reward=False, **kwargs
+                 on_spade_reward_weight=0., out_of_box_sphere_reward=False, **kwargs
                  ):
         super().__init__(scene_flags=[
             # SceneFlag.ENABLE_STABILIZATION,
@@ -48,7 +48,7 @@ class SpadeTaskScene(Scene):
         self.sand_deposit_length = sand_deposit_length
         self.demo_importance = 1.
         self.offset = ([0., 0.045, 0.4], [1., 0., 0., 0.])
-        self.on_sphere_reward = on_sphere_reward
+        self.on_spade_reward_weight = on_spade_reward_weight
         self.out_of_box_sphere_reward = out_of_box_sphere_reward
 
     def scene_setup(self):
@@ -148,8 +148,8 @@ class SpadeTaskScene(Scene):
         rewards = {}
         if self.add_spheres:
             rewards['spheres'] = 0.1 * self.get_num_spheres_in_boxes()
-            if self.on_sphere_reward:
-                rewards['above_spheres'] = 0.001 * self.get_number_of_spheres_above_spade()
+            if self.on_spade_reward_weight > 0.:
+                rewards['above_spheres'] = self.on_spade_reward_weight * self.get_number_of_spheres_above_spade()
             if self.out_of_box_sphere_reward:
                 rewards['outsiders'] = -0.01 * self.get_number_of_spheres_outside()
         return rewards

@@ -46,8 +46,9 @@ class RobotEnv(BaseEnv):
         self.t_tool[:3, :3] = torch.tensor(
             npq.as_rotation_matrix(self.robot.tool_transform[1]))
         self.reset()
-        if not self.old_renderer:
-            self.renderer.add_physx_scene(self.scene)
+        if self.render:
+            if not self.old_renderer:
+                self.renderer.add_physx_scene(self.scene)
 
     def get_obs(self, return_space=False):
         scene_obs = self.scene.get_obs()
