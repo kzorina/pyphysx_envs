@@ -13,13 +13,16 @@ from pyphysx_envs.robot_kinematics_function import dh_transformation, forward_ki
 
 class RobotEnv(BaseEnv):
 
-    def __init__(self, scene_name='spade', tool_name='spade', robot_name='panda',
+    def __init__(self, scene_name='spade', tool_name='spade', robot_name='panda', show_demo_tool=False,
                  env_params=None, dq_limit_percentage=0.9, demonstration_poses=None, **kwargs):
 
         self.scene = get_scene(scene_name, **kwargs)
         self.scene.tool = get_tool(tool_name, **kwargs)
         self.robot = get_robot(robot_name, **kwargs)
         self.tool_transform = multiply_transformations(self.robot.tool_transform, self.scene.tool.transform)
+        self.show_demo_tool = show_demo_tool
+        if self.show_demo_tool:
+            self.scene.demo_tool = get_tool(tool_name, demo_tool=True, **kwargs)
         super().__init__(**kwargs)
         self.scene.scene_setup()
         # self.scene.add_actor(self.scene.tool)
@@ -102,6 +105,8 @@ class RobotEnv(BaseEnv):
                           len(self.demonstration_poses) - 1).astype(np.int32)
 
             dpos, dquat = self.demonstration_poses[idd]
+            if self.show_demo_tool:
+                self.scene.demo_tool.set_global_pose((dpos, dquat))
             rewards['demo_positions'] = exponential_reward(tool_pos - dpos, scale=self.scene.demo_importance * 0.5, b=10)
             rewards['demo_orientation'] = exponential_reward([npq.rotation_intrinsic_distance(tool_quat, dquat)],
                                                              scale=self.scene.demo_importance * 0.5, b=1)
