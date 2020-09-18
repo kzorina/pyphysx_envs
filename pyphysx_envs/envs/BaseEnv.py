@@ -2,7 +2,7 @@ from rlpyt.envs.base import EnvInfo, Env, EnvStep
 from pyphysx_envs.utils import params_fill_default
 from pyphysx_utils.rate import Rate
 from pyphysx_render.renderer import PyPhysXParallelRenderer
-from pyphysx_render.pyrender import PyPhysxViewer
+# from pyphysx_render.pyrender import PyPhysxViewer
 
 
 class BaseEnv(Env):
