@@ -30,15 +30,16 @@ def create_actor_box(pos, length_x=0.5, length_y=0.5, width=0.01, height=0.1, ma
 class SpadeTaskScene(Scene):
 
     def __init__(self, add_spheres=False, obs_add_sand=False, sphere_color='sandybrown', sand_deposit_length=0.4,
-                 plane_static_friction=0.1, plane_dynamic_friction=0.1, plane_restitution=0.,
+                 plane_static_friction=0., plane_dynamic_friction=0., plane_restitution=0.,
                  sphere_static_friction=5., sphere_dynamic_friction=5.,
-                 on_spade_reward_weight=0., out_of_box_sphere_reward=False, **kwargs
+                 on_spade_reward_weight=0., out_of_box_sphere_reward=False, options=None, **kwargs
                  ):
         super().__init__(scene_flags=[
             # SceneFlag.ENABLE_STABILIZATION,
             SceneFlag.ENABLE_FRICTION_EVERY_ITERATION,
             SceneFlag.ENABLE_CCD
         ])
+        self.default_params = options.spade_default_params
         self.mat_plane = Material(static_friction=plane_static_friction, dynamic_friction=plane_dynamic_friction,
                                   restitution=plane_restitution)
         self.mat_spheres = Material(static_friction=sphere_static_friction, dynamic_friction=sphere_dynamic_friction)
@@ -160,16 +161,16 @@ class SpadeTaskScene(Scene):
             obs.append(self.sand_box_act.get_global_pose()[0])
         return obs
 
-    @property
-    def default_params(self):
-        return {'constant': {
-            'num_spheres': 200,
-            'sphere_radius': 0.02,
-            'sphere_mass': 0.0001
-        },
-            'variable': {
-                'tool_init_position': (0., 0., 1.),
-                'goal_box_position': (0., 1., 0.),
-                'sand_buffer_position': (1., 1., 0.),
-            }
-        }
+    # @property
+    # def default_params(self):
+    #     return {'constant': {
+    #         'num_spheres': 200,
+    #         'sphere_radius': 0.02,
+    #         'sphere_mass': 0.0001
+    #     },
+    #         'variable': {
+    #             'tool_init_position': (0., 0., 1.),
+    #             'goal_box_position': (0., 1., 0.),
+    #             'sand_buffer_position': (1., 1., 0.),
+    #         }
+    #     }

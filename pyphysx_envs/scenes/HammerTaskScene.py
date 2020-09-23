@@ -23,27 +23,36 @@ class HammerTaskScene(Scene):
         self.nail_pose = nail_pose
         self.nail_mass = nail_mass
 
-    def scene_setup(self):
-        self.nail_act = RigidDynamic()
-        self.nail_act.attach_shape(Shape.create_box(self.nail_dim[0], self.mat_nail))
+
+    def add_nail_plank(self, nail_pose, color=None):
+        nail_act = RigidDynamic()
+        nail_act.attach_shape(Shape.create_box(self.nail_dim[0], self.mat_nail))
         tip: Shape = Shape.create_box(self.nail_dim[1], self.mat_nail)
         tip.set_local_pose([0., 0., -(self.nail_dim[0][2] / 2 + self.nail_dim[1][2] / 2)])
-        self.nail_act.attach_shape(tip)
-        self.nail_act.set_global_pose(self.nail_pose)
-        self.nail_act.set_mass(self.nail_mass)
-        self.nail_act.disable_gravity()
-        self.add_actor(self.nail_act)
-        self.holder1_act = RigidStatic()
-        self.holder1_act.attach_shape(Shape.create_box([0.1, 0.1, 0.1], self.mat))
-        self.holder1_act.set_global_pose([self.nail_pose[0],
-                                          self.nail_pose[1] + 0.05 + self.nail_dim[0][2] / 2,
-                                          self.nail_pose[2] - 0.1 - 0.05 - self.nail_dim[0][2]])
-        self.add_actor(self.holder1_act)
-        self.holder2_act = RigidStatic()
-        self.holder2_act.attach_shape(Shape.create_box([0.1, 0.1, 0.1], self.mat))
-        self.holder2_act.set_global_pose([self.nail_pose[0], self.nail_pose[1] - 0.05 - self.nail_dim[0][2] / 2,
-                                          self.nail_pose[2] - 0.1 - 0.05 - self.nail_dim[0][2]])
-        self.add_actor(self.holder2_act)
+        nail_act.attach_shape(tip)
+        nail_act.set_global_pose(nail_pose)
+        nail_act.set_mass(self.nail_mass)
+        nail_act.disable_gravity()
+        self.add_actor(nail_act)
+        holder1_act = RigidStatic()
+        holder1_act.attach_shape(Shape.create_box([0.1, 0.1, 0.1], self.mat))
+        holder1_act.set_global_pose([nail_pose[0],
+                                          nail_pose[1] + 0.05 + self.nail_dim[0][2] / 2,
+                                          nail_pose[2] - 0.1 - 0.05 - self.nail_dim[0][2]])
+        self.add_actor(holder1_act)
+        holder2_act = RigidStatic()
+        holder2_act.attach_shape(Shape.create_box([0.1, 0.1, 0.1], self.mat))
+        holder2_act.set_global_pose([nail_pose[0], nail_pose[1] - 0.05 - self.nail_dim[0][2] / 2,
+                                          nail_pose[2] - 0.1 - 0.05 - self.nail_dim[0][2]])
+        self.add_actor(holder2_act)
+        return nail_act, holder1_act, holder2_act
+
+    def scene_setup(self):
+        self.nail_act, self.holder1_act, self.holder2_act = self.add_nail_plank(self.nail_pose)
+        if self.additional_objects is not None:
+            for nail_pose in self.additional_objects.get('nail_positions', []):
+                new_nail_act, _, _ = self.add_nail_plank(nail_pose)
+
         self.world = RigidStatic()
         self.world.set_global_pose([0.0, 0.0, 0.])
         self.add_actor(self.world)

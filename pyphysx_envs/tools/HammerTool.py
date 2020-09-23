@@ -8,8 +8,8 @@ class HammerTool(RigidDynamic):
     """
     def __init__(self, mass=0.1, head_length=0.2, head_width=0.1, head_cover_width=0.01,
                  head_static_friction=10., head_dynamic_friction=10., head_restitution=0.,
-                 handle_length=0.4, handle_width=0.04,
-                 handle_static_friction=0.1, handle_dynamic_friction=0.1, **kwargs):
+                 handle_length=0.4, handle_width=0.04, handle_static_friction=0.1, handle_dynamic_friction=0.1,
+                 demo_tool=False, demo_color=[0., 0., 0.8, 0.25], **kwargs):
         # todo: write documentation, explain axis, sizes, etc
         super().__init__()
         self.mat_head = Material(static_friction=head_static_friction,
@@ -34,6 +34,11 @@ class HammerTool(RigidDynamic):
         self.attach_shape(hammer_handle)
         self.set_global_pose([0.0, 0.0, 0.5])
         self.set_mass(mass)
+        if demo_tool:
+            for s in self.get_atached_shapes():  # type: Shape
+                s.set_flag(ShapeFlag.SIMULATION_SHAPE, False)
+                s.set_user_data({'color': demo_color})
+        self.disable_gravity()
 
     @property
     def transform(self):
