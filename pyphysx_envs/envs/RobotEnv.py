@@ -134,9 +134,9 @@ class RobotEnv(BaseEnv):
                 self.rate.sleep()
         tool_pos, tool_quat = self.scene.tool.get_global_pose()
         rewards = {}
-        rewards['max_vel_penalty'] = -5 * np.linalg.norm(
+        rewards['max_vel_penalty'] = -1 * np.linalg.norm(
             np.maximum(np.zeros(len(self.dq_limit)), action - self.dq_limit))
-        rewards['min_vel_penalty'] = -5 * np.linalg.norm(
+        rewards['min_vel_penalty'] = -1 * np.linalg.norm(
             np.minimum(np.zeros(len(self.dq_limit)), action + self.dq_limit))
         rewards.update(self.scene.get_environment_rewards())
         if self.demonstration_poses is not None:

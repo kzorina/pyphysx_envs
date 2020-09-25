@@ -32,7 +32,8 @@ class SpadeTaskScene(Scene):
     def __init__(self, add_spheres=False, obs_add_sand=False, sphere_color='sandybrown', sand_deposit_length=0.4,
                  plane_static_friction=0., plane_dynamic_friction=0., plane_restitution=0.,
                  sphere_static_friction=5., sphere_dynamic_friction=5.,
-                 on_spade_reward_weight=0., out_of_box_sphere_reward=False, spade_default_params=None, **kwargs
+                 spheres_reward_weigth=0.1, on_spade_reward_weight=0., out_of_box_sphere_reward=False,
+                 negative_box_motion_reward=None, spade_default_params=None, **kwargs
                  ):
         super().__init__(scene_flags=[
             # SceneFlag.ENABLE_STABILIZATION,
@@ -49,13 +50,16 @@ class SpadeTaskScene(Scene):
         self.sand_deposit_length = sand_deposit_length
         self.demo_importance = 1.
         self.offset = ([0., 0.045, 0.4], [1., 0., 0., 0.])
+        self.spheres_reward_weigth = spheres_reward_weigth
         self.on_spade_reward_weight = on_spade_reward_weight
         self.out_of_box_sphere_reward = out_of_box_sphere_reward
+        self.negative_box_motion_reward = negative_box_motion_reward
 
     def scene_setup(self):
         # self.renderer = renderer
         self.add_actor(RigidStatic.create_plane(material=self.mat_plane))
         self.goal_box_act = create_actor_box([1., 1., 0.], color='brown')
+        self.goal_box_pose = [1., 1., 0.]
         self.add_actor(self.goal_box_act)
         if self.add_spheres:
             self.demo_importance = 0.2
@@ -97,6 +101,7 @@ class SpadeTaskScene(Scene):
         return last_pos
 
     def reset_object_positions(self, params):
+        self.goal_box_pose = params['goal_box_position']
         self.goal_box_act.set_global_pose(params['goal_box_position'])
         if self.add_spheres:
             self.sand_box_act.set_global_pose(
@@ -148,11 +153,16 @@ class SpadeTaskScene(Scene):
     def get_environment_rewards(self):
         rewards = {}
         if self.add_spheres:
-            rewards['spheres'] = 2 * 0.1 * self.get_num_spheres_in_boxes()
+            rewards['spheres'] = self.spheres_reward_weigth * self.get_num_spheres_in_boxes()
             if self.on_spade_reward_weight > 0.:
                 rewards['above_spheres'] = self.on_spade_reward_weight * self.get_number_of_spheres_above_spade()
             if self.out_of_box_sphere_reward:
                 rewards['outsiders'] = -0.01 * self.get_number_of_spheres_outside()
+        if self.negative_box_motion_reward:
+            rewards['box_displacement'] = -5 * (0.5 - max(0.5,
+                                                          np.linalg.norm(self.goal_box_pose -
+                                                                         self.goal_box_act.get_global_pose()[0])))
+
         return rewards
 
     def get_obs(self):
