@@ -2,7 +2,7 @@ from pyphysx import *
 from pyphysx_utils.transformations import multiply_transformations, inverse_transform, quat_from_euler
 import numpy as np
 from pyphysx_utils.rate import Rate
-
+from rlpyt_utils.utils import exponential_reward
 
 # from utils import create_actor_box
 
@@ -161,9 +161,12 @@ class SpadeTaskScene(Scene):
             if self.out_of_box_sphere_reward:
                 rewards['outsiders'] = -0.01 * self.get_number_of_spheres_outside()
         if self.negative_box_motion_reward:
-            rewards['box_displacement'] = -5 * (0.5 - max(0.5,
-                                                          np.linalg.norm(self.goal_box_pose -
-                                                                         self.goal_box_act.get_global_pose()[0])))
+            # rewards['box_displacement'] = -5 * (0.5 - max(0.5,
+            #                                               np.linalg.norm(self.goal_box_pose -
+            #                                                              self.goal_box_act.get_global_pose()[0])))
+            rewards['box_displacement'] = -(1 - exponential_reward(self.goal_box_pose -
+                                                                   self.goal_box_act.get_global_pose()[0], scale=1,
+                                                                   b=10))
 
         return rewards
 
