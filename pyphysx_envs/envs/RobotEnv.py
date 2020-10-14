@@ -130,8 +130,8 @@ class RobotEnv(BaseEnv):
             self.scene.simulate(self.rate.period() / self.sub_steps)
         if self.render:
             self.render_scene()
-            for _ in range(self.sleep_steps * 5):
-                self.rate.sleep()
+            # for _ in range(self.sleep_steps * 5):
+            #     self.rate.sleep()
         tool_pos, tool_quat = self.scene.tool.get_global_pose()
         rewards = {}
         rewards['max_vel_penalty'] = -1 * np.linalg.norm(
