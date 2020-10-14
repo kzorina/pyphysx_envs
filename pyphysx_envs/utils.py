@@ -8,7 +8,7 @@ from pyphysx_envs.robot import PandaRobot, TalosArmRobot
 def params_fill_default(params_default, params=None, add_noise=True):
     if params is None:
         params = {}
-    final_params = params_default['constant']
+    final_params = params_default['constant'].copy()
     final_params.update(params_default['variable'])
     final_params.update(params)
     if add_noise:
