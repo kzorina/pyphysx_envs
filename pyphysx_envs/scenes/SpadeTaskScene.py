@@ -40,9 +40,9 @@ class SpadeTaskScene(Scene):
             SceneFlag.ENABLE_FRICTION_EVERY_ITERATION,
             SceneFlag.ENABLE_CCD
         ])
+        self.default_params = self._default_params
         if spade_default_params is not None:
-            # todo: fix this
-            self.default_params = spade_default_params
+            self.default_params.update(spade_default_params)
         self.mat_plane = Material(static_friction=plane_static_friction, dynamic_friction=plane_dynamic_friction,
                                   restitution=plane_restitution)
         self.mat_spheres = Material(static_friction=sphere_static_friction, dynamic_friction=sphere_dynamic_friction)
@@ -177,7 +177,7 @@ class SpadeTaskScene(Scene):
         return obs
 
     @property
-    def default_params(self):
+    def _default_params(self):
         return {'constant': {
             'num_spheres': 200,
             'sphere_radius': 0.02,
