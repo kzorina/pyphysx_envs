@@ -10,7 +10,10 @@ from pyphysx import *
 from pyphysx_utils.transformations import multiply_transformations
 from pyphysx_envs.robot_kinematics_function import dh_transformation, forward_kinematic
 from pyphysx_utils.urdf_robot_parser import quat_from_euler
+from pyphysx_envs.utils import params_fill_default
 
+
+# todo: create params insert default responsive to env
 def params_insert_default(params=None, params_default=None, add_noise=False):
     if params is None:
         params = {}
@@ -108,7 +111,7 @@ class RobotEnv(BaseEnv):
 
     def reset(self):
         self.iter = 0
-        self.params = params_insert_default(params_default=self.params)
+        self.params = params_fill_default(params_default=self.scene.default_params, params=self.params)
         self.scene.tool.set_global_pose(self.params['tool_init_position'])
 
         for i, name in enumerate(self.robot.get_joint_names()):
@@ -129,7 +132,7 @@ class RobotEnv(BaseEnv):
             self.robot.update(self.rate.period() / self.sub_steps)
             self.scene.simulate(self.rate.period() / self.sub_steps)
         if self.render:
-            self.render_scene()
+            self.renderer.update(blocking=True)
             # for _ in range(self.sleep_steps * 5):
             #     self.rate.sleep()
         tool_pos, tool_quat = self.scene.tool.get_global_pose()

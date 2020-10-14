@@ -5,7 +5,7 @@ from pyphysx_envs.tools import HammerTool, SpadeTool
 from pyphysx_envs.robot import PandaRobot, TalosArmRobot
 
 
-def params_fill_default(params, params_default, add_noise=True):
+def params_fill_default(params_default, params=None, add_noise=True):
     if params is None:
         params = {}
     final_params = params_default['constant']

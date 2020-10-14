@@ -12,7 +12,7 @@ class BaseEnv(Env):
         super().__init__()
         self.render = render
         self.batch_T = batch_T
-        self.params = params_fill_default(params, self.scene.default_params)
+        self.params = params_fill_default(self.scene.default_params, params)
         self.rate = Rate(rate)
         self.demonstration_fps = demonstration_fps
         self.obs_add_time = obs_add_time
@@ -26,9 +26,6 @@ class BaseEnv(Env):
                 # self.renderer.add_physx_scene(self.scene)
         self.demonstration_poses = demonstration_poses
         self.scene.demo_importance = 1.
-
-    def render_scene(self):
-        self.renderer.update()
 
     def step(self, action):
         raise NotImplementedError
