@@ -14,7 +14,7 @@ class BaseEnv(Env):
         self.batch_T = batch_T
         self.params = params_fill_default(params_default=self.scene.default_params, params=params)
         self.scene.default_params['variable'].update(self.params)
-        print(self.params)
+        # print(self.params)
         self.rate = Rate(rate)
         self.demonstration_fps = demonstration_fps
         self.obs_add_time = obs_add_time

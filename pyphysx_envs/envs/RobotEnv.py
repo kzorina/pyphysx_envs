@@ -14,27 +14,27 @@ from pyphysx_envs.utils import params_fill_default
 
 
 # todo: create params insert default responsive to env
-def params_insert_default(params=None, params_default=None, add_noise=False):
-    if params is None:
-        params = {}
-    if params_default is None:
-        params_default = {'num_spheres': 200, 'sphere_radius': 0.02, 'sphere_mass': 0.1,
-                      'goal_box_position': [0., 1., 0.], 'sand_buffer_position': [1., 0., 0.],
-                      'tool_init_position': np.array([0.55214731, 0.75667859, 0.99, -0.271, 0.6579, 0.33529, 0.617]),
-                      'spheres_friction':1, 'spade_friction':0.1,'sand_buffer_yaw':0}
-
-    for key, value in params_default.items():
-        params[key] = params.get(key, value)
-    sand_rot = [1., 0., 0., 0.]
-    if params['sand_buffer_yaw'] != 0:
-        sand_rot = quat_from_euler('xyz', [0., 0., params['sand_buffer_yaw']])
-    if add_noise:
-        for param_name in ['goal_box_position', 'sand_buffer_position', 'tool_init_position',
-                           'sand_buffer_yaw']:
-            params[param_name] = np.array(params[param_name]) + np.random.normal(0., 0.05)
-    params['sand_buffer_position'][2] = 0.
-    params['goal_box_position'][2] = 0.
-    return params
+# def params_insert_default(params=None, params_default=None, add_noise=False):
+#     if params is None:
+#         params = {}
+#     if params_default is None:
+#         params_default = {'num_spheres': 200, 'sphere_radius': 0.02, 'sphere_mass': 0.1,
+#                       'goal_box_position': [0., 1., 0.], 'sand_buffer_position': [1., 0., 0.],
+#                       'tool_init_position': np.array([0.55214731, 0.75667859, 0.99, -0.271, 0.6579, 0.33529, 0.617]),
+#                       'spheres_friction':1, 'spade_friction':0.1,'sand_buffer_yaw':0}
+#
+#     for key, value in params_default.items():
+#         params[key] = params.get(key, value)
+#     sand_rot = [1., 0., 0., 0.]
+#     if params['sand_buffer_yaw'] != 0:
+#         sand_rot = quat_from_euler('xyz', [0., 0., params['sand_buffer_yaw']])
+#     if add_noise:
+#         for param_name in ['goal_box_position', 'sand_buffer_position', 'tool_init_position',
+#                            'sand_buffer_yaw']:
+#             params[param_name] = np.array(params[param_name]) + np.random.normal(0., 0.05)
+#     params['sand_buffer_position'][2] = 0.
+#     params['goal_box_position'][2] = 0.
+#     return params
 
 class RobotEnv(BaseEnv):
 
