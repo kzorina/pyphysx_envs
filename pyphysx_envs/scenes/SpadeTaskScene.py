@@ -66,7 +66,7 @@ class SpadeTaskScene(Scene):
         if self.add_spheres:
             self.demo_importance = 0.2
             self.sand_box_act = create_actor_box(
-                ([0., 0., 0.], quat_from_euler("xyz", [0., 0., 1.19])),
+                ([0., 0., 0.], quat_from_euler("xyz", [0., 0., 0.])),
                 length_x=self.sand_deposit_length,
                 length_y=self.sand_deposit_length, add_front_wall=False)
             self.add_actor(self.sand_box_act)
@@ -95,7 +95,7 @@ class SpadeTaskScene(Scene):
             for _ in range(24):
                 self.simulate(1 / 24)
                 Rate(24).sleep()
-            # self.renderer.render_scene(self)
+            # self.super_obj.renderer.update(blocking=True)
             new_pos = np.array([sphere.get_global_pose()[0] for sphere in self.spheres_act])
             if np.all(np.abs(last_pos - new_pos) < position_threshold):
                 break
@@ -112,7 +112,8 @@ class SpadeTaskScene(Scene):
             # reset sphere pos
             for i, sphere in enumerate(self.spheres_act):
                 sphere.set_global_pose(multiply_transformations(self.sphere_store_pos[i],
-                                                                params['sand_buffer_position']))
+                                                                [params['sand_buffer_position'][0],
+                                                                 params['sand_buffer_position'][1], 0.]))
 
     def get_num_spheres_in_boxes(self):
         gpos = self.goal_box_act.get_global_pose()[0]
@@ -182,12 +183,13 @@ class SpadeTaskScene(Scene):
         return {'constant': {
             'num_spheres': 200,
             'sphere_radius': 0.02,
-            'sphere_mass': 0.0001
+            'sphere_mass': 0.0001,
+            'sand_buffer_yaw': 0.
         },
             'variable': {
                 'tool_init_position': (0., 0., 1.),
                 'goal_box_position': (0., 1., 0.),
-                'sand_buffer_position': (1., 1., 0.),
-                'sand_buffer_yaw': 0.
+                'sand_buffer_position': (1., 1., 0.)
+
             }
         }
