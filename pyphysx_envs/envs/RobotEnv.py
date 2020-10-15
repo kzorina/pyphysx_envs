@@ -62,6 +62,7 @@ class RobotEnv(BaseEnv):
                 demo_tool.set_global_pose([id % len(self.scene.additional_objects['demo_tools_colors']), 0., 10.5])
                 self.demo_tool_list.append(demo_tool)
         super().__init__(**kwargs)
+        self.scene.params = self.params
         self.scene.scene_setup()
         # self.scene.add_actor(self.scene.tool)
         self.scene.add_aggregate(self.robot.get_aggregate())

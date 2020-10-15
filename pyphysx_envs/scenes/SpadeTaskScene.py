@@ -66,7 +66,7 @@ class SpadeTaskScene(Scene):
         if self.add_spheres:
             self.demo_importance = 0.2
             self.sand_box_act = create_actor_box(
-                ([0., 0., 0.], quat_from_euler("xyz", [0., 0., 0.])),
+                ([0., 0., 0.], quat_from_euler("xyz", [0., 0., self.params['sand_buffer_yaw']])),
                 length_x=self.sand_deposit_length,
                 length_y=self.sand_deposit_length, add_front_wall=False)
             self.add_actor(self.sand_box_act)
@@ -108,7 +108,7 @@ class SpadeTaskScene(Scene):
         if self.add_spheres:
             self.sand_box_act.set_global_pose(
                 ([params['sand_buffer_position'][0], params['sand_buffer_position'][1], 0.05],
-                quat_from_euler("xyz", [0., 0., params['sand_buffer_yaw']])))
+                quat_from_euler("xyz", [0., 0., self.params['sand_buffer_yaw']])))
             # reset sphere pos
             for i, sphere in enumerate(self.spheres_act):
                 sphere.set_global_pose(multiply_transformations(self.sphere_store_pos[i],
