@@ -107,7 +107,8 @@ class SpadeTaskScene(Scene):
         self.goal_box_act.set_global_pose([params['goal_box_position'][0], params['goal_box_position'][1], 0.05])
         if self.add_spheres:
             self.sand_box_act.set_global_pose(
-                (params['sand_buffer_position'], quat_from_euler("xyz", [0., 0., params['sand_buffer_yaw']])))
+                ([params['sand_buffer_position'][0], params['sand_buffer_position'][1], 0.05],
+                quat_from_euler("xyz", [0., 0., params['sand_buffer_yaw']])))
             # reset sphere pos
             for i, sphere in enumerate(self.spheres_act):
                 sphere.set_global_pose(multiply_transformations(self.sphere_store_pos[i],
