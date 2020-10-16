@@ -9,12 +9,16 @@ import numpy as np
 
 class ToolEnv(BaseEnv):
 
-    def __init__(self, scene_name='spade', tool_name='spade', env_params=None, **kwargs):
+    def __init__(self, scene_name='spade', tool_name='spade', show_demo_tool=False, env_params=None, **kwargs):
         self.scene = get_scene(scene_name, **kwargs)
         self.scene.tool = get_tool(tool_name, **kwargs)
         super().__init__(**kwargs)
         self.scene.scene_setup()
         self.scene.add_actor(self.scene.tool)
+        self.show_demo_tool = show_demo_tool
+        if self.show_demo_tool:
+            self.scene.demo_tool = get_tool(tool_name, demo_tool=True, **kwargs)
+            self.scene.add_actor(self.scene.demo_tool)
         if self.demonstration_poses is not None:
             self.params['tool_init_position'] = self.demonstration_poses[0]
         self._action_space = FloatBox(low=-4 * np.ones(6), high=4 * np.ones(6))
@@ -65,6 +69,8 @@ class ToolEnv(BaseEnv):
                           len(self.demonstration_poses) - 1).astype(np.int32)
 
             dpos, dquat = self.demonstration_poses[idd]
+            if self.show_demo_tool:
+                self.scene.demo_tool.set_global_pose((dpos, dquat))
             rewards['demo_positions'] = exponential_reward(tool_pos - dpos, scale=0.5, b=10)
             rewards['demo_orientation'] = exponential_reward([npq.rotation_intrinsic_distance(tool_quat, dquat)],
                                                              scale=0.5, b=1)
