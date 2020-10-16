@@ -103,7 +103,7 @@ class SpadeTaskScene(Scene):
         return last_pos
 
     def reset_object_positions(self, params):
-        self.goal_box_pose = params['goal_box_position']
+        self.goal_box_pose = [params['goal_box_position'][0], params['goal_box_position'][1], 0.]
         self.goal_box_act.set_global_pose([params['goal_box_position'][0], params['goal_box_position'][1], 0.05])
         if self.add_spheres:
             self.sand_box_act.set_global_pose(
