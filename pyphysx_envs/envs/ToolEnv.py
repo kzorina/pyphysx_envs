@@ -22,7 +22,7 @@ class ToolEnv(BaseEnv):
         self.sub_steps = 10
         self.sleep_steps = 10
         self.reset()
-        if not self.old_renderer:
+        if self.render:
             self.renderer.add_physx_scene(self.scene)
 
     def get_obs(self, return_space=False):
@@ -54,9 +54,9 @@ class ToolEnv(BaseEnv):
             self.scene.tool.set_angular_velocity(action[3:])
             self.scene.simulate(self.rate.period() / self.sub_steps)
         if self.render:
-            self.render_scene()
-            for _ in range(self.sleep_steps):
-                self.rate.sleep()
+            self.renderer.update(blocking=True)
+            # for _ in range(self.sleep_steps):
+            #     self.rate.sleep()
         tool_pos, tool_quat = self.scene.tool.get_global_pose()
         rewards = {}
         rewards.update(self.scene.get_environment_rewards())
@@ -70,5 +70,7 @@ class ToolEnv(BaseEnv):
                                                              scale=0.5, b=1)
         return EnvStep(self.get_obs(), sum(rewards.values()) / self.horizon,
                        self.iter == self.batch_T, EnvInfo())
+
+
 
 
