@@ -71,9 +71,9 @@ class ToolEnv(BaseEnv):
             dpos, dquat = self.demonstration_poses[idd]
             if self.show_demo_tool:
                 self.scene.demo_tool.set_global_pose((dpos, dquat))
-            rewards['demo_positions'] = exponential_reward(tool_pos - dpos, scale=0.5, b=10)
+            rewards['demo_positions'] = exponential_reward(tool_pos - dpos, scale=self.scene.demo_importance * 0.5, b=10)
             rewards['demo_orientation'] = exponential_reward([npq.rotation_intrinsic_distance(tool_quat, dquat)],
-                                                             scale=0.5, b=1)
+                                                             scale=self.scene.demo_importance * 0.5, b=1)
         return EnvStep(self.get_obs(), sum(rewards.values()) / self.horizon,
                        self.iter == self.batch_T, EnvInfo())
 
