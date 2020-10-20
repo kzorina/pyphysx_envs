@@ -51,7 +51,7 @@ class SpadeTaskScene(Scene):
         self.sphere_color = sphere_color
         self.sand_deposit_length = sand_deposit_length
         self.demo_importance = 1.
-        self.offset = ([0., 0.045, 0.4], [1., 0., 0., 0.])
+        self.offset = ([0., 0.045, 0.4], quat_from_euler("xyz", [-np.pi / 6, 0., 0.]))
         self.spheres_reward_weigth = spheres_reward_weigth
         self.on_spade_reward_weight = on_spade_reward_weight
         self.out_of_box_sphere_reward = out_of_box_sphere_reward
@@ -108,7 +108,7 @@ class SpadeTaskScene(Scene):
         if self.add_spheres:
             self.sand_box_act.set_global_pose(
                 ([params['sand_buffer_position'][0], params['sand_buffer_position'][1], 0.05],
-                quat_from_euler("xyz", [0., 0., self.params['sand_buffer_yaw']])))
+                 quat_from_euler("xyz", [0., 0., self.params['sand_buffer_yaw']])))
             # reset sphere pos
             for i, sphere in enumerate(self.spheres_act):
                 sphere.set_global_pose(multiply_transformations(self.sphere_store_pos[i],
@@ -135,7 +135,7 @@ class SpadeTaskScene(Scene):
                                                                     cast_transformation(self.offset)))
         pts = np.apply_along_axis(lambda row: self.point_to_spade_ort(row, spade_tip_pose), 1, sphere_pos)
         ur_sphere_pos = np.array([0.065, 0.1, 0.])
-        ll_sphere_pos = np.array([-0.065, -0.1, -0.11])
+        ll_sphere_pos = np.array([-0.065, 0., -0.14])
         inidx = np.all(np.logical_and(ll_sphere_pos <= pts, pts <= ur_sphere_pos), axis=1)
         return np.sum(inidx)
 
