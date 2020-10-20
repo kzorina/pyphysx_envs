@@ -58,7 +58,7 @@ class SpadeTaskScene(Scene):
         self.negative_box_motion_reward = negative_box_motion_reward
 
     def scene_setup(self):
-        # self.renderer = temp_renderer
+        # self.renderer = renderer
         self.add_actor(RigidStatic.create_plane(material=self.mat_plane))
         self.goal_box_act = create_actor_box([1., 1., 0.05], color='brown')
         self.goal_box_pose = [1., 1., 0.]
@@ -83,7 +83,6 @@ class SpadeTaskScene(Scene):
                 # todo: check why we need it
                 a.set_angular_damping(500)
                 self.add_actor(a)
-            # temp_renderer.add_physx_scene(self)
             self.sphere_store_pos = self.sim_spheres_until_stable()
 
         # TODO: temp! remove
@@ -122,12 +121,9 @@ class SpadeTaskScene(Scene):
         return last_pos
 
     def reset_object_positions(self, params):
-        print(params)
-        self.goal_box_pose = [params['goal_box_position'][0], params['goal_box_position'][1], 0.05]
+        self.goal_box_pose = [params['goal_box_position'][0], params['goal_box_position'][1], 0.]
         self.goal_box_act.set_global_pose([params['goal_box_position'][0], params['goal_box_position'][1], 0.05])
         if self.add_spheres:
-            # print(self.params['sand_buffer_yaw'])
-            # print(params['sand_buffer_yaw'])
             self.sand_box_act.set_global_pose(
                 ([params['sand_buffer_position'][0], params['sand_buffer_position'][1], 0.],
                  quat_from_euler("xyz", [0., 0., params['sand_buffer_yaw']])))
