@@ -29,6 +29,9 @@ class ToolEnv(BaseEnv):
         if self.render:
             self.renderer.add_physx_scene(self.scene)
 
+    def set_params(self, params):
+        self.params = params
+
     def get_obs(self, return_space=False):
         if return_space:
             low = [-2.] * 7
@@ -57,10 +60,7 @@ class ToolEnv(BaseEnv):
             self.scene.tool.set_linear_velocity(action[:3])
             self.scene.tool.set_angular_velocity(action[3:])
             self.scene.simulate(self.rate.period() / self.sub_steps)
-        if self.render:
-            self.renderer.update(blocking=True)
-            # for _ in range(self.sleep_steps):
-            #     self.rate.sleep()
+
         tool_pos, tool_quat = self.scene.tool.get_global_pose()
         rewards = {}
         rewards.update(self.scene.get_environment_rewards())
@@ -74,6 +74,11 @@ class ToolEnv(BaseEnv):
             rewards['demo_positions'] = exponential_reward(tool_pos - dpos, scale=self.scene.demo_importance * 0.5, b=10)
             rewards['demo_orientation'] = exponential_reward([npq.rotation_intrinsic_distance(tool_quat, dquat)],
                                                              scale=self.scene.demo_importance * 0.5, b=1)
+        # print(rewards)
+        if self.render:
+            self.renderer.update(blocking=True)
+            # for _ in range(self.sleep_steps):
+            #     self.rate.sleep()
         return EnvStep(self.get_obs(), sum(rewards.values()) / self.horizon,
                        self.iter == self.batch_T, EnvInfo())
 

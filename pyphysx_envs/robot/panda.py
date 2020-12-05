@@ -11,6 +11,7 @@ class PandaRobot(URDFRobot):
         self.attach_root_node_to_pose((self.robot_t0[:3, 3], npq.from_rotation_matrix(self.robot_t0[:3, :3])))
         self.disable_gravity()
         self.reset_pose()
+        self.init_q = np.array([-0.0302, -1.0526,  0.6388, -1.3987,  1.2125,  0.7082,  2.0445])
 
     @property
     def robot_t0(self):
@@ -35,13 +36,16 @@ class PandaRobot(URDFRobot):
     def max_dq_limit(self):
         return np.array([2.175, 2.175, 2.175, 2.175, 2.61,  2.61, 2.61])
 
-    @property
-    def init_q(self):
-        return np.array([-0.0302, -1.0526,  0.6388, -1.3987,  1.2125,  0.7082,  2.0445])
+    def set_init_q(self, init_q):
+        self.init_q = init_q
+
+    # @property
+    # def init_q(self):
+    #     return np.array([-0.0302, -1.0526,  0.6388, -1.3987,  1.2125,  0.7082,  2.0445])
 
     @property
     def tool_transform(self):
         return ([0, 0, 0.133],
-                quat_from_euler('xyz', [np.deg2rad(-90), np.deg2rad(0), np.deg2rad(90 + 45)]))
+                quat_from_euler('xyz', [np.deg2rad(-90), np.deg2rad(0), np.deg2rad(-45)]))
 
 

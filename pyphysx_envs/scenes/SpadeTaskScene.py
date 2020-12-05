@@ -84,6 +84,20 @@ class SpadeTaskScene(Scene):
                 self.add_actor(a)
             self.sphere_store_pos = self.sim_spheres_until_stable()
 
+        # TODO: temp! remove
+        print("Adding temp spheres")
+        self.path_spheres_act = [RigidDynamic() for _ in range(184)]
+        for i, a in enumerate(self.path_spheres_act):
+            sphere = Shape.create_sphere(self.default_params['constant']['sphere_radius'], self.mat_spheres)
+            # sphere.set_user_data(dict(color=self.sphere_color))
+            sphere.set_flag(ShapeFlag.SIMULATION_SHAPE, False)
+            sphere.set_user_data({'color': [(1-i/183), i/183, 0., 0.25]})
+            a.attach_shape(sphere)
+            a.set_global_pose([100, 100, i * 2 * 0.05])
+            a.set_mass(0.1)
+            a.disable_gravity()
+            self.add_actor(a)
+
     def sim_spheres_until_stable(self, max_iterations=500, position_threshold=1e-6):
         # box_for_spheres = create_actor_box([0., 0., 0.], color='brown',
         #                                    length_x=(self.sand_deposit_length) / np.sqrt(2),
@@ -193,3 +207,13 @@ class SpadeTaskScene(Scene):
 
             }
         }
+
+    @property
+    def scene_object_params(self):
+        return ('goal_box_position', 'sand_buffer_position')
+
+    @property
+    def min_dist_between_scene_objects(self):
+        # goal box lenght = 0.5
+        # min dist is (half diag of box + half diag of sand depo) * 1.1
+        return 1.1 * (self.sand_deposit_length + 0.5) / np.sqrt(2)
