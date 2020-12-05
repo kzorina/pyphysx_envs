@@ -80,7 +80,8 @@ class ToolEnv(BaseEnv):
             # for _ in range(self.sleep_steps):
             #     self.rate.sleep()
         return EnvStep(self.get_obs(), sum(rewards.values()) / self.horizon,
-                       self.iter == self.batch_T, EnvInfo())
+                       self.iter == self.batch_T, EnvInfo()), rewards
+    # TODO: remove rewards!!!
 
 
 
