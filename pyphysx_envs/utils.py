@@ -55,8 +55,10 @@ from rlpyt_utils.utils import exponential_reward
 def follow_tool_tip_traj(env, poses):
     env.params['tool_init_position'] = poses[0]
     env.reset()
-    # action = np.random.normal(size=env._action_space.shape)
-    # env.step(action)
+    action = np.random.normal(size=env._action_space.shape)
+    _, rewards = env.step(action)
+    base_spheres = rewards['spheres']
+
     # print("Generating movement")
     # while env.renderer.is_active:
     spheres_reward = 0
@@ -77,7 +79,7 @@ def follow_tool_tip_traj(env, poses):
         # print(rewards)
         # for _ in range(2):
         #     env.step(np.zeros(env._action_space.shape))
-        spheres_reward += rewards['spheres'] / len(poses)
+        spheres_reward += (rewards['spheres'] - base_spheres) / len(poses)
 
         rewards['demo_positions'] = exponential_reward(tool_pos - desired_handle_pos, scale=0.5, b=10)
         rewards['demo_orientation'] = exponential_reward([npq.rotation_intrinsic_distance(tool_quat, desired_handle_quat)],
