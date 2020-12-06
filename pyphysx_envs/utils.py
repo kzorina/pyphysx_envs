@@ -58,7 +58,7 @@ def follow_tool_tip_traj(env, poses):
     action = np.random.normal(size=env._action_space.shape)
     _, rewards = env.step(action)
     base_spheres = rewards['spheres']
-    print(base_spheres)
+    print("base spheres = ", base_spheres)
     # print("Generating movement")
     # while env.renderer.is_active:
     spheres_reward = 0
@@ -79,8 +79,8 @@ def follow_tool_tip_traj(env, poses):
         # print(rewards)
         # for _ in range(2):
         #     env.step(np.zeros(env._action_space.shape))
-        print(rewards['spheres'])
-        print((rewards['spheres'] - base_spheres) / len(poses))
+        print(rewards['spheres']- base_spheres)
+        # print((rewards['spheres'] - base_spheres) / len(poses))
         spheres_reward += (rewards['spheres'] - base_spheres) / len(poses)
 
         rewards['demo_positions'] = exponential_reward(tool_pos - desired_handle_pos, scale=0.5, b=10)
