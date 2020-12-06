@@ -56,7 +56,8 @@ def follow_tool_tip_traj(env, poses):
     env.params['tool_init_position'] = poses[0]
     env.reset()
     action = np.random.normal(size=env._action_space.shape)
-    _, rewards = env.step(action)
+    for _ in range(5):
+        _, rewards = env.step(action)
     base_spheres = rewards['spheres']
     print("base spheres = ", base_spheres)
     # print("Generating movement")
