@@ -120,8 +120,8 @@ class SpadeTaskScene(Scene):
         self.goal_box_pose = [params['goal_box_position'][0], params['goal_box_position'][1], 0.]
         self.goal_box_act.set_global_pose([params['goal_box_position'][0], params['goal_box_position'][1], 0.05])
         if self.add_spheres:
-            print(self.params['sand_buffer_yaw'])
-            print(params['sand_buffer_yaw'])
+            # print(self.params['sand_buffer_yaw'])
+            # print(params['sand_buffer_yaw'])
             self.sand_box_act.set_global_pose(
                 ([params['sand_buffer_position'][0], params['sand_buffer_position'][1], 0.05],
                  quat_from_euler("xyz", [0., 0., params['sand_buffer_yaw']])))
