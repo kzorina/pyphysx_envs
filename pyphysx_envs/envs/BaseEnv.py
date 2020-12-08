@@ -20,7 +20,7 @@ class BaseEnv(Env):
         self.demonstration_fps = demonstration_fps
         self.obs_add_time = obs_add_time
         if self.render:
-            self.renderer = PyPhysxViewer()
+            self.renderer = PyPhysxViewer(**render_dict)
             # self.old_renderer = old_renderer
             # if old_renderer:
             #     self.renderer = PyPhysXParallelRenderer(render_window_kwargs=dict() if render_dict is None else render_dict)
