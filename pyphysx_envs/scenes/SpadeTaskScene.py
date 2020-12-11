@@ -116,7 +116,7 @@ class SpadeTaskScene(Scene):
             if np.all(np.abs(last_pos - new_pos) < position_threshold):
                 break
         # box_for_spheres.set_global_pose((-100., -100., 0.))
-        print(self.sand_box_act.get_global_pose())
+        print("after sim until stable spheres", self.sand_box_act.get_global_pose())
         return last_pos
 
     def reset_object_positions(self, params):
@@ -131,7 +131,7 @@ class SpadeTaskScene(Scene):
 
             self.simulate(1 / 24)
             self.renderer.update(blocking=True)
-            print(self.sand_box_act.get_global_pose())
+            print("in reset", self.sand_box_act.get_global_pose())
             # reset sphere pos
             for i, sphere in enumerate(self.spheres_act):
                 sphere.set_global_pose(self.sphere_store_pos[i] + [params['sand_buffer_position'][0],
