@@ -133,7 +133,7 @@ class SpadeTaskScene(Scene):
             self.renderer.update(blocking=True)
             print("in reset", self.sand_box_act.get_global_pose())
             self.sand_box_act.set_global_pose(
-                ([params['sand_buffer_position'][0], params['sand_buffer_position'][1], 0.05],
+                ([params['sand_buffer_position'][0], params['sand_buffer_position'][1], 0.0],
                  quat_from_euler("xyz", [0., 0., params['sand_buffer_yaw']])))
             print("in reset 2", self.sand_box_act.get_global_pose())
             # reset sphere pos
