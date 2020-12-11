@@ -57,8 +57,8 @@ class SpadeTaskScene(Scene):
         self.out_of_box_sphere_reward = out_of_box_sphere_reward
         self.negative_box_motion_reward = negative_box_motion_reward
 
-    def scene_setup(self):
-        # self.renderer = renderer
+    def scene_setup(self, temp_renderer):
+        self.renderer = temp_renderer
         self.add_actor(RigidStatic.create_plane(material=self.mat_plane))
         self.goal_box_act = create_actor_box([1., 1., 0.], color='brown')
         self.goal_box_pose = [1., 1., 0.]
@@ -66,7 +66,8 @@ class SpadeTaskScene(Scene):
         if self.add_spheres:
             self.demo_importance = 0.2
             self.sand_box_act = create_actor_box(
-                ([0., 0., 0.], quat_from_euler("xyz", [0., 0., self.params['sand_buffer_yaw']])),
+                ([0., 0., 0.05],
+                 quat_from_euler("xyz", [0., 0., self.params['sand_buffer_yaw']])),
                 length_x=self.sand_deposit_length,
                 length_y=self.sand_deposit_length, add_front_wall=False)
             self.add_actor(self.sand_box_act)
@@ -82,6 +83,7 @@ class SpadeTaskScene(Scene):
                 # todo: check why we need it
                 a.set_angular_damping(500)
                 self.add_actor(a)
+            temp_renderer.add_physx_scene(self)
             self.sphere_store_pos = self.sim_spheres_until_stable()
 
         # TODO: temp! remove
@@ -108,8 +110,8 @@ class SpadeTaskScene(Scene):
             last_pos = np.array([sphere.get_global_pose()[0] for sphere in self.spheres_act])
             for _ in range(24):
                 self.simulate(1 / 24)
-                Rate(24).sleep()
-            # self.super_obj.renderer.update(blocking=True)
+                # Rate(24).sleep()
+            self.renderer.update(blocking=True)
             new_pos = np.array([sphere.get_global_pose()[0] for sphere in self.spheres_act])
             if np.all(np.abs(last_pos - new_pos) < position_threshold):
                 break

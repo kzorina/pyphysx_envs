@@ -63,7 +63,7 @@ class RobotEnv(BaseEnv):
                 self.demo_tool_list.append(demo_tool)
         super().__init__(**kwargs)
         # self.scene.params = self.params
-        self.scene.scene_setup()
+        self.scene.scene_setup(self.renderer)
         # self.scene.add_actor(self.scene.tool)
         self.scene.add_aggregate(self.robot.get_aggregate())
         for joint_name, joint in self.robot.movable_joints.items():
@@ -154,7 +154,8 @@ class RobotEnv(BaseEnv):
                                                            b=10)
             rewards['demo_orientation'] = exponential_reward([npq.rotation_intrinsic_distance(tool_quat, dquat)],
                                                              scale=self.scene.demo_importance * 0.5, b=1)
-
+        # print(self.q)
         # print(rewards)
+        # print(sum(rewards.values()))
         return EnvStep(self.get_obs(), sum(rewards.values()) / self.horizon,
                        self.iter == self.batch_T, EnvInfo())
