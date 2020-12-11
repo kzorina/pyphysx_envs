@@ -116,6 +116,7 @@ class SpadeTaskScene(Scene):
             if np.all(np.abs(last_pos - new_pos) < position_threshold):
                 break
         # box_for_spheres.set_global_pose((-100., -100., 0.))
+        print(self.sand_box_act.get_global_pose())
         return last_pos
 
     def reset_object_positions(self, params):
