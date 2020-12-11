@@ -126,12 +126,12 @@ class SpadeTaskScene(Scene):
             # print(self.params['sand_buffer_yaw'])
             # print(params['sand_buffer_yaw'])
             self.sand_box_act.set_global_pose(
-                ([params['sand_buffer_position'][0], params['sand_buffer_position'][1], 0.05],
+                ([params['sand_buffer_position'][0], params['sand_buffer_position'][1], 0.],
                  quat_from_euler("xyz", [0., 0., params['sand_buffer_yaw']])))
-            for _ in range(24):
-                self.simulate(1 / 24)
-            self.renderer.update(blocking=True)
-            print("in reset", self.sand_box_act.get_global_pose())
+            # for _ in range(24):
+            #     self.simulate(1 / 24)
+            # self.renderer.update(blocking=True)
+            # print("in reset", self.sand_box_act.get_global_pose())
             # self.sand_box_act.set_global_pose(
             #     ([params['sand_buffer_position'][0], params['sand_buffer_position'][1], 0.0],
             #      quat_from_euler("xyz", [0., 0., params['sand_buffer_yaw']])))
@@ -139,7 +139,7 @@ class SpadeTaskScene(Scene):
             # reset sphere pos
             for i, sphere in enumerate(self.spheres_act):
                 sphere.set_global_pose(self.sphere_store_pos[i] + [params['sand_buffer_position'][0],
-                                                                 params['sand_buffer_position'][1], 0.])
+                                                                 params['sand_buffer_position'][1], 0.15])
 
     def get_num_spheres_in_boxes(self):
         gpos = self.goal_box_act.get_global_pose()[0]
