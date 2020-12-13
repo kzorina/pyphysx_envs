@@ -110,13 +110,15 @@ class SpadeTaskScene(Scene):
             last_pos = np.array([sphere.get_global_pose()[0] for sphere in self.spheres_act])
             for _ in range(24):
                 self.simulate(1 / 24)
-                Rate(24).sleep()
+                # Rate(24).sleep()
             self.renderer.update(blocking=True)
             new_pos = np.array([sphere.get_global_pose()[0] for sphere in self.spheres_act])
             if np.all(np.abs(last_pos - new_pos) < position_threshold):
                 break
         # box_for_spheres.set_global_pose((-100., -100., 0.))
         print("after sim until stable spheres", self.sand_box_act.get_global_pose())
+        for _ in range(24):
+            self.simulate(1 / 24)
         return last_pos
 
     def reset_object_positions(self, params):
