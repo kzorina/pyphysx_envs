@@ -8,8 +8,8 @@ import numpy as np
 import torch
 from pyphysx import *
 from pyphysx_utils.transformations import multiply_transformations, inverse_transform
-from pyphysx_envs.robot_kinematics_function import dh_transformation, forward_kinematic
-from pyphysx_utils.urdf_robot_parser import quat_from_euler
+# from pyphysx_envs.robot_kinematics_function import dh_transformation, forward_kinematic
+# from pyphysx_utils.urdf_robot_parser import quat_from_euler
 from pyphysx_envs.utils import params_fill_default
 
 
@@ -132,8 +132,8 @@ class RobotEnv(BaseEnv):
                 self.q[joint_name] = joint.commanded_joint_position
             self.robot.update(self.rate.period() / self.sub_steps)
             self.scene.simulate(self.rate.period() / self.sub_steps)
-        # if self.render:
-        #     self.renderer.update(blocking=True)
+        if self.render:
+            self.renderer.update(blocking=True)
             # for _ in range(self.sleep_steps * 5):
             #     self.rate.sleep()
         tool_pos, tool_quat = self.scene.tool.get_global_pose()

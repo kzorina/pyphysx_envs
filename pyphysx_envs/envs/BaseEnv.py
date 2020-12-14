@@ -22,12 +22,6 @@ class BaseEnv(Env):
         self.obs_add_time = obs_add_time
         if self.render:
             self.renderer = PyPhysxViewer(**render_dict)
-            # self.old_renderer = old_renderer
-            # if old_renderer:
-            #     self.renderer = PyPhysXParallelRenderer(render_window_kwargs=dict() if render_dict is None else render_dict)
-            # else:
-            #     self.renderer = PyPhysxViewer()
-                # self.renderer.add_physx_scene(self.scene)
         self.demonstration_poses = demonstration_poses
         self.scene.demo_importance = 1.
 

@@ -33,7 +33,7 @@ class SpadeTaskScene(Scene):
                  plane_static_friction=0., plane_dynamic_friction=0., plane_restitution=0.,
                  sphere_static_friction=5., sphere_dynamic_friction=5.,
                  spheres_reward_weigth=0.1, on_spade_reward_weight=0., out_of_box_sphere_reward=False,
-                 negative_box_motion_reward=None, spade_default_params=None, **kwargs
+                 negative_box_motion_reward=None, path_spheres_n=0, spade_default_params=None, **kwargs
                  ):
         super().__init__(scene_flags=[
             # SceneFlag.ENABLE_STABILIZATION,
@@ -56,6 +56,7 @@ class SpadeTaskScene(Scene):
         self.on_spade_reward_weight = on_spade_reward_weight
         self.out_of_box_sphere_reward = out_of_box_sphere_reward
         self.negative_box_motion_reward = negative_box_motion_reward
+        self.path_spheres_n = path_spheres_n
 
     def scene_setup(self):
         # self.renderer = renderer
@@ -86,18 +87,18 @@ class SpadeTaskScene(Scene):
             self.sphere_store_pos = self.sim_spheres_until_stable()
 
         # TODO: temp! remove
-        print("Adding temp spheres")
-        self.path_spheres_act = [RigidDynamic() for _ in range(184)]
-        for i, a in enumerate(self.path_spheres_act):
-            sphere = Shape.create_sphere(self.default_params['constant']['sphere_radius'], self.mat_spheres)
-            # sphere.set_user_data(dict(color=self.sphere_color))
-            sphere.set_flag(ShapeFlag.SIMULATION_SHAPE, False)
-            sphere.set_user_data({'color': [(1-i/183), i/183, 0., 0.25]})
-            a.attach_shape(sphere)
-            a.set_global_pose([100, 100, i * 2 * 0.05])
-            a.set_mass(0.1)
-            a.disable_gravity()
-            self.add_actor(a)
+        if self.path_spheres_n > 0:
+            self.path_spheres_act = [RigidDynamic() for _ in range(self.path_spheres_n)]
+            for i, a in enumerate(self.path_spheres_act):
+                sphere = Shape.create_sphere(self.default_params['constant']['sphere_radius'], self.mat_spheres)
+                # sphere.set_user_data(dict(color=self.sphere_color))
+                sphere.set_flag(ShapeFlag.SIMULATION_SHAPE, False)
+                sphere.set_user_data({'color': [(1-i/self.path_spheres_n), i/self.path_spheres_n, 0., 0.25]})
+                a.attach_shape(sphere)
+                a.set_global_pose([100, 100, i * 2 * 0.05])
+                a.set_mass(0.1)
+                a.disable_gravity()
+                self.add_actor(a)
 
     def sim_spheres_until_stable(self, max_iterations=500, position_threshold=1e-6):
         # box_for_spheres = create_actor_box([0., 0., 0.], color='brown',
@@ -115,7 +116,7 @@ class SpadeTaskScene(Scene):
             if np.all(np.abs(last_pos - new_pos) < position_threshold):
                 break
         # box_for_spheres.set_global_pose((-100., -100., 0.))
-        print("after sim until stable spheres", self.sand_box_act.get_global_pose())
+        # print("after sim until stable spheres", self.sand_box_act.get_global_pose())
         for _ in range(24):
             self.simulate(1 / 24)
         return last_pos
@@ -127,14 +128,6 @@ class SpadeTaskScene(Scene):
             self.sand_box_act.set_global_pose(
                 ([params['sand_buffer_position'][0], params['sand_buffer_position'][1], 0.],
                  quat_from_euler("xyz", [0., 0., params['sand_buffer_yaw']])))
-            # for _ in range(24):
-            #     self.simulate(1 / 24)
-            # self.renderer.update(blocking=True)
-            # print("in reset", self.sand_box_act.get_global_pose())
-            # self.sand_box_act.set_global_pose(
-            #     ([params['sand_buffer_position'][0], params['sand_buffer_position'][1], 0.0],
-            #      quat_from_euler("xyz", [0., 0., params['sand_buffer_yaw']])))
-            # print("in reset 2", self.sand_box_act.get_global_pose())
             # reset sphere pos
             for i, sphere in enumerate(self.spheres_act):
                 sphere.set_global_pose(self.sphere_store_pos[i] + [params['sand_buffer_position'][0],
