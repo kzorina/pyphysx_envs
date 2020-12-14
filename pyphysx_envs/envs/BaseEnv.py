@@ -8,21 +8,26 @@ from pyphysx_render.pyrender import PyPhysxViewer
 class BaseEnv(Env):
 
     def __init__(self, render=False, render_dict=None, batch_T=100, params=None, rate=24, demonstration_fps=24,
-                 obs_add_time=True, demonstration_poses=None, old_renderer=True, **kwargs):
+                 obs_add_time=True, demonstration_poses=None, demonstration_q=None, old_renderer=True, **kwargs):
         super().__init__()
         self.render = render
         self.batch_T = batch_T
         self.params = params_fill_default(params_default=self.scene.default_params, params=params)
         self.scene.params = self.params
         self.scene.default_params['variable'].update({k: self.params[k]
-                                    for k in set(self.params).intersection(self.scene.default_params['variable'])})
+                                                      for k in set(self.params).intersection(
+                self.scene.default_params['variable'])})
         # print(self.params)
         self.rate = Rate(rate)
         self.demonstration_fps = demonstration_fps
         self.obs_add_time = obs_add_time
         if self.render:
             self.renderer = PyPhysxViewer(**render_dict)
+        if demonstration_poses is not None and demonstration_q is not None:
+            raise ValueError(
+                f"demonstration_poses (len = {len(demonstration_poses)}) and demonstration_q (len = {len(demonstration_q)}) cannot exist simultaneously")
         self.demonstration_poses = demonstration_poses
+        self.demonstration_q = demonstration_q
         self.scene.demo_importance = 1.
 
     def step(self, action):

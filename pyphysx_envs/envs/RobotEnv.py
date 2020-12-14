@@ -84,7 +84,7 @@ class RobotEnv(BaseEnv):
         for name in self.robot.get_joint_names():
             self.q[name] = 0.
         self.dq_limit = self.robot.max_dq_limit * dq_limit_percentage
-        self.demonstration_poses = demonstration_poses
+        # self.demonstration_poses = demonstration_poses
         self.t_tool = torch.eye(4)
         self.t_tool[:3, 3] = torch.tensor(self.tool_transform[0])
         self.t_tool[:3, :3] = torch.tensor(
@@ -151,7 +151,7 @@ class RobotEnv(BaseEnv):
 
             # dpos, dquat = self.demonstration_poses[idd]
             dpos, dquat = multiply_transformations(self.demonstration_poses[idd], inverse_transform(
-                                                                                   self.scene.tool.to_tip_transform))
+                self.scene.tool.to_tip_transform))
 
             if self.show_demo_tool:
                 self.scene.demo_tool.set_global_pose((dpos, dquat))
@@ -159,6 +159,15 @@ class RobotEnv(BaseEnv):
                                                            b=10)
             rewards['demo_orientation'] = exponential_reward([npq.rotation_intrinsic_distance(tool_quat, dquat)],
                                                              scale=self.scene.demo_importance * 0.5, b=1)
+        if self.demonstration_q is not None:
+            idd = np.clip(np.round(self.scene.simulation_time * self.demonstration_fps), 0,
+                          len(self.demonstration_poses) - 1).astype(np.int32)
+            q_ref = np.array(self.demonstration_q[idd])
+            q_curr = np.array(
+                [joint.commanded_joint_position for (joint_name, joint) in self.robot.movable_joints.items()])
+            rewards['demo_q_positions'] = exponential_reward(q_curr - q_ref, scale=self.scene.demo_importance,
+                                                             b=10)
+
         # print(self.q)
         # print(rewards)
         # print(sum(rewards.values()))
