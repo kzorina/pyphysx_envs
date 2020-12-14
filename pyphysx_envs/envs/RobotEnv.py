@@ -161,7 +161,7 @@ class RobotEnv(BaseEnv):
                                                              scale=self.scene.demo_importance * 0.5, b=1)
         if self.demonstration_q is not None:
             idd = np.clip(np.round(self.scene.simulation_time * self.demonstration_fps), 0,
-                          len(self.demonstration_poses) - 1).astype(np.int32)
+                          len(self.demonstration_q) - 1).astype(np.int32)
             q_ref = np.array(self.demonstration_q[idd])
             q_curr = np.array(
                 [joint.commanded_joint_position for (joint_name, joint) in self.robot.movable_joints.items()])
