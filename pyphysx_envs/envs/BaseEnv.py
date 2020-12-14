@@ -14,7 +14,8 @@ class BaseEnv(Env):
         self.batch_T = batch_T
         self.params = params_fill_default(params_default=self.scene.default_params, params=params)
         self.scene.params = self.params
-        self.scene.default_params['variable'].update(self.params)
+        self.scene.default_params['variable'].update({k: self.params[k]
+                                    for k in set(self.params).intersection(self.scene.default_params['variable'])})
         # print(self.params)
         self.rate = Rate(rate)
         self.demonstration_fps = demonstration_fps

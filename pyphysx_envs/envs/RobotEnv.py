@@ -7,7 +7,7 @@ import quaternion as npq
 import numpy as np
 import torch
 from pyphysx import *
-from pyphysx_utils.transformations import multiply_transformations
+from pyphysx_utils.transformations import multiply_transformations, inverse_transform
 from pyphysx_envs.robot_kinematics_function import dh_transformation, forward_kinematic
 from pyphysx_utils.urdf_robot_parser import quat_from_euler
 from pyphysx_envs.utils import params_fill_default
@@ -63,7 +63,7 @@ class RobotEnv(BaseEnv):
                 self.demo_tool_list.append(demo_tool)
         super().__init__(**kwargs)
         # self.scene.params = self.params
-        self.scene.scene_setup(self.renderer)
+        self.scene.scene_setup()
         # self.scene.add_actor(self.scene.tool)
         self.scene.add_aggregate(self.robot.get_aggregate())
         for joint_name, joint in self.robot.movable_joints.items():
@@ -132,8 +132,8 @@ class RobotEnv(BaseEnv):
                 self.q[joint_name] = joint.commanded_joint_position
             self.robot.update(self.rate.period() / self.sub_steps)
             self.scene.simulate(self.rate.period() / self.sub_steps)
-        if self.render:
-            self.renderer.update(blocking=True)
+        # if self.render:
+        #     self.renderer.update(blocking=True)
             # for _ in range(self.sleep_steps * 5):
             #     self.rate.sleep()
         tool_pos, tool_quat = self.scene.tool.get_global_pose()
@@ -144,10 +144,15 @@ class RobotEnv(BaseEnv):
             np.minimum(np.zeros(len(self.dq_limit)), action + self.dq_limit))
         rewards.update(self.scene.get_environment_rewards())
         if self.demonstration_poses is not None:
-            idd = np.clip(np.round(self.scene.simulation_time * self.demonstration_fps), 0,
+            # idd = np.clip(np.round(self.scene.simulation_time * self.demonstration_fps), 0,
+            #               len(self.demonstration_poses) - 1).astype(np.int32)
+            idd = np.clip(self.iter, 0,
                           len(self.demonstration_poses) - 1).astype(np.int32)
 
-            dpos, dquat = self.demonstration_poses[idd]
+            # dpos, dquat = self.demonstration_poses[idd]
+            dpos, dquat = multiply_transformations(self.demonstration_poses[idd], inverse_transform(
+                                                                                   self.scene.tool.to_tip_transform))
+
             if self.show_demo_tool:
                 self.scene.demo_tool.set_global_pose((dpos, dquat))
             rewards['demo_positions'] = exponential_reward(tool_pos - dpos, scale=self.scene.demo_importance * 0.5,
