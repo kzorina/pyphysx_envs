@@ -17,7 +17,7 @@ while env.renderer.is_active:
     action = np.random.normal(size=env._action_space.shape)
     env.step(action)
     i += 1
-    print(i)
+    # print(i)
     # if i % 100 == 0:
     #     print(env.reset())
     env.renderer.update()
