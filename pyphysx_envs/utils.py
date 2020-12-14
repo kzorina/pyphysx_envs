@@ -9,7 +9,7 @@ def params_fill_default(params_default, params=None, add_noise=True):
     if params is None:
         params = {}
     final_params = params_default['constant'].copy()
-    final_params.update(params_default['variable'])
+    final_params.update(params_default['variable'].copy())
     final_params.update(params)
     print("VARIABLE PARAMS")
     print(params_default['variable'])
