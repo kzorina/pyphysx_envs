@@ -201,7 +201,7 @@ class SpadeTaskScene(Scene):
         return {'constant': {
             'num_spheres': 200,
             'sphere_radius': 0.02,
-            'sphere_mass': 0.0001,
+            'sphere_mass': 0.01,
             'sand_buffer_yaw': 0.
         },
             'variable': {

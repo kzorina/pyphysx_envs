@@ -11,12 +11,9 @@ def params_fill_default(params_default, params=None, add_noise=True):
     final_params = params_default['constant'].copy()
     final_params.update(params_default['variable'].copy())
     final_params.update(params)
-    print("VARIABLE PARAMS")
-    print(params_default['variable'])
-    print("------- / VARIABLE PARAMS")
     if add_noise:
         for key, value in params_default['variable'].items():
-            final_params[key] = np.array(final_params[key]) + np.random.normal(0., 0.05)
+            final_params[key] = np.array(final_params[key]) + np.random.normal(0., 0.01)
     return final_params
 
 

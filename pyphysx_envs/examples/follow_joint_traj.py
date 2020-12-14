@@ -8,7 +8,7 @@ from matplotlib import pyplot as plt
 
 filename = '/home/kzorina/Work/git_repos/crocoddyl_examples/test_ddp_traj.pkl'
 q_trajectory = pickle.load(open(filename, 'rb'))
-print(len(q_trajectory))
+# print(len(q_trajectory))
 fig, axes = plt.subplots(2, 1, squeeze=False, sharex=True, sharey=True)
 axes[0, 0].plot(q_trajectory[:, 2:])
 axes[0, 0].set_prop_cycle(None)
@@ -20,7 +20,7 @@ axes[0, 0].set_ylabel('head y [-]')
 calculated_rate = len(q_trajectory) * 24 / 92
 q_trajectory_sampled = q_trajectory[0::52]
 calculated_rate = 24
-print(calculated_rate)
+# print(calculated_rate)
 # exit(1)
 x_base, y_base = q_trajectory[-1][:2]
 q_vel = np.diff(q_trajectory, axis=0)[2:] * 1000
@@ -33,11 +33,11 @@ demo_params = pickle.load(open(
     '/home/kzorina/Work/learning_from_video/data/alignment/new_spade3/00_params_count_09_smth_                        0.93_0.17',
     'rb'))
 demo_params['tool_init_position'] = demo_params['tool_init_position'][0]
-print(f"tool_init_position: {demo_params['tool_init_position']}")
+# print(f"tool_init_position: {demo_params['tool_init_position']}")
 
 env = RobotEnv(scene_name='spade', tool_name='spade', robot_name='panda',
                rate=24, demonstration_poses=demo_params['tip_poses'], show_demo_tool=True,
-               render=True,
+               render=True, path_spheres_n=len(demo_params['tip_poses']),
                add_spheres=True,
                spade_mesh_path=path.join(path.dirname(path.dirname(__file__)), 'data/spade_mesh.obj'),
                robot_pose=(x_base, y_base, 0.),
