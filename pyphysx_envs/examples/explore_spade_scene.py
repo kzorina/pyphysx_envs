@@ -19,14 +19,14 @@ demo_params['tool_init_position'] = demo_params['tool_init_position'][0]
 renderer = PyPhysxViewer()
 scene = get_scene('spade', add_spheres=True)
 scene.params = demo_params
-scene.scene_setup(renderer)
-_action_space = FloatBox(low=-4 * np.ones(6), high=4 * np.ones(6))
+scene.scene_setup()
+# _action_space = FloatBox(low=-4 * np.ones(6), high=4 * np.ones(6))
 
 renderer.add_physx_scene(scene)
 i = 0
 while True:
     i += 1
-    action = np.random.normal(size=_action_space.shape)
+    # action = np.random.normal(size=_action_space.shape)
     scene.simulate(0.1)
     renderer.update(blocking=True)
 
