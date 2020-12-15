@@ -118,6 +118,7 @@ class RobotEnv(BaseEnv):
         for i, name in enumerate(self.robot.get_joint_names()):
             self.q[name] = self.robot.init_q[i] + np.random.normal(0., 0.01)
         self.robot.reset_pose(self.q)
+        self.robot.update(self.rate.period() / self.sub_steps) # TODO: check if it will prevent spheres from randmly flying
         self.scene.tool.set_global_pose(
             multiply_transformations(self.robot.last_link.get_global_pose(), self.tool_transform))
         self.scene.reset_object_positions(self.params)

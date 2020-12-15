@@ -60,10 +60,10 @@ i = 0
 # print(action)
 # env.step(action)
 print(f"q trajectory: {q_trajectory_sampled[0]}, \n real q data {np.asarray(list(env.q.values()))}")
-for _ in range(100):
-    env.scene.simulate(0.1)
-    env.renderer.update(blocking=True)
-print("end simulation")
+# for _ in range(100):
+#     env.scene.simulate(0.1)
+#     env.renderer.update(blocking=True)
+# print("end simulation")
 while env.renderer.is_active:
     real_q = []
     for i in range(len(q_trajectory_sampled) - 1):
