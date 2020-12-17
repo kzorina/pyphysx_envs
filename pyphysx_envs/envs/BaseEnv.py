@@ -1,34 +1,45 @@
 from rlpyt.envs.base import EnvInfo, Env, EnvStep
 from pyphysx_envs.utils import params_fill_default
 from pyphysx_utils.rate import Rate
-# from pyphysx_render.renderer import PyPhysXParallelRenderer
 from pyphysx_render.pyrender import PyPhysxViewer
 
 
 class BaseEnv(Env):
+    """
+    Base environment serves as both template for all created envs
+    and has some common values set in init function
+    """
 
     def __init__(self, render=False, render_dict=None, batch_T=100, params=None, rate=24, demonstration_fps=24,
                  obs_add_time=True, demonstration_poses=None, demonstration_q=None, old_renderer=True, **kwargs):
         super().__init__()
         self.render = render
         self.batch_T = batch_T
+        self.demonstration_fps = demonstration_fps
+        self.obs_add_time = obs_add_time
+        self.demonstration_poses = demonstration_poses
+        self.demonstration_q = demonstration_q
+
+        self.rate = Rate(rate)
+
+        # this function will enrich passed params with scene default params (in case not all specified)
         self.params = params_fill_default(params_default=self.scene.default_params, params=params)
+        # record final params to scene.params TODO: check if this is needed
         self.scene.params = self.params
+        # updates scene default_params if passed params contained any of the scene variable params
         self.scene.default_params['variable'].update({k: self.params[k]
                                                       for k in set(self.params).intersection(
                 self.scene.default_params['variable'])})
-        # print(self.params)
-        self.rate = Rate(rate)
-        self.demonstration_fps = demonstration_fps
-        self.obs_add_time = obs_add_time
-        if self.render:
-            self.renderer = PyPhysxViewer(**render_dict)
+        # standard multiplier for demo following
+        self.scene.demo_importance = 1.
+
         if demonstration_poses is not None and demonstration_q is not None:
             raise ValueError(
-                f"demonstration_poses (len = {len(demonstration_poses)}) and demonstration_q (len = {len(demonstration_q)}) cannot exist simultaneously")
-        self.demonstration_poses = demonstration_poses
-        self.demonstration_q = demonstration_q
-        self.scene.demo_importance = 1.
+                f"demonstration_poses (len = {len(demonstration_poses)}) and "
+                f"demonstration_q (len = {len(demonstration_q)}) cannot exist simultaneously")
+        # set up renderer
+        if self.render:
+            self.renderer = PyPhysxViewer(**render_dict if render_dict is not None else dict())
 
     def step(self, action):
         raise NotImplementedError

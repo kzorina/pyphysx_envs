@@ -8,6 +8,9 @@ import numpy as np
 
 
 class ToolEnv(BaseEnv):
+    """
+    Environment for tool moving in a scene
+    """
 
     def __init__(self, scene_name='spade', tool_name='spade', show_demo_tool=False, env_params=None, **kwargs):
         self.scene = get_scene(scene_name, **kwargs)
@@ -80,8 +83,7 @@ class ToolEnv(BaseEnv):
             # for _ in range(self.sleep_steps):
             #     self.rate.sleep()
         return EnvStep(self.get_obs(), sum(rewards.values()) / self.horizon,
-                       self.iter == self.batch_T, EnvInfo()), rewards
-    # TODO: remove rewards!!!
+                       self.iter == self.batch_T, EnvInfo())
 
 
 
