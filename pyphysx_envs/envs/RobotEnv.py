@@ -59,7 +59,7 @@ class RobotEnv(BaseEnv):
             multiply_transformations(self.robot.last_link.get_global_pose(), self.tool_transform))
         self.joint = D6Joint(self.robot.last_link, self.scene.tool, local_pose0=self.tool_transform)
         self.scene.add_actor(self.scene.tool)
-
+        self.create_tool_joint()
         self._action_space = FloatBox(low=-3.14 * np.ones(len(self.robot.get_joint_names())),
                                       high=3.14 * np.ones(len(self.robot.get_joint_names())))
         self._observation_space = self.get_obs(return_space=True)
@@ -81,6 +81,10 @@ class RobotEnv(BaseEnv):
         # add scene to renderer
         if self.render:
             self.renderer.add_physx_scene(self.scene)
+
+    def create_tool_joint(self):
+        self.joint = D6Joint(self.robot.last_link, self.scene.tool, local_pose0=self.tool_transform)
+        self.joint.set_break_force(5000, 5000)
 
     def get_obs(self, return_space=False):
         scene_obs = self.scene.get_obs()
@@ -118,6 +122,8 @@ class RobotEnv(BaseEnv):
         self.scene.tool.set_global_pose(
             multiply_transformations(self.robot.last_link.get_global_pose(), self.tool_transform))
         self.scene.reset_object_positions(self.params)
+        self.joint.release()
+        self.create_tool_joint()
         self.scene.simulation_time = 0.
         return self.get_obs()
 
@@ -168,5 +174,6 @@ class RobotEnv(BaseEnv):
         # print(self.q)
         # print(rewards)
         # print(sum(rewards.values()))
+        done_flag = self.iter == self.batch_T or self.joint.is_broken()
         return EnvStep(self.get_obs(), sum(rewards.values()) / self.horizon,
-                       self.iter == self.batch_T, EnvInfo())
+                       done_flag, EnvInfo())

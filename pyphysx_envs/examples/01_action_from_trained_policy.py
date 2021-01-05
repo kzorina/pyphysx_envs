@@ -6,9 +6,9 @@ import numpy as np
 from os import path
 import pickle
 
-filename = path.join(path.dirname(path.dirname(__file__)), 'data/trained_policy/itr_0.pkl')
+# filename = path.join(path.dirname(path.dirname(__file__)), 'data/trained_policy/itr_0.pkl')
 # filename = path.join(path.dirname(path.dirname(__file__)), 'data/trained_policy/itr_99.pkl')
-# filename = path.join(path.dirname(path.dirname(__file__)), 'data/trained_policy/itr_3699.pkl')
+filename = path.join(path.dirname(path.dirname(__file__)), 'data/trained_policy/itr_3699.pkl')
 model_dict = torch.load(filename)['agent_state_dict']
 
 input_size = 15
@@ -51,7 +51,7 @@ env = RobotEnv(scene_name='spade', tool_name='spade', robot_name='panda',
                )
 env.robot.set_init_q(q_trajectory_sampled[0, 2:])
 env.reset()
-env.joint.set_break_force(5000, 5000)  # prevents large forces that causes instability
+# env.joint.set_break_force(5000, 5000)  # prevents large forces that causes instability
 # to reset joint if it is broken:
 # env.joint.release()
 # and then create a new joint after release
@@ -65,6 +65,16 @@ for i in range(env.batch_T):
     o, r, d, info = env.step(action.detach().numpy())
     rewards.append(r)
     env.renderer.update(blocking=True)
+    print("done:", d)
     print(env.joint.is_broken())  # while training check if the joint is broken and return terminal negative reward if yes
+
+env.reset()
+for i in range(env.batch_T):
+    action = agent_model.mu(torch.tensor(env.get_obs()))
+    o, r, d, info = env.step(action.detach().numpy())
+    rewards.append(r)
+    env.renderer.update(blocking=True)
+    print("done:", d)
+    print(env.joint.is_broken())
 print(np.sum(np.array(rewards)))
 print(f"spheres in a box :{env.scene.get_num_spheres_in_boxes()}")
