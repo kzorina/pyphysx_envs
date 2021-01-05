@@ -66,6 +66,7 @@ for i in range(env.batch_T):
     rewards.append(r)
     env.renderer.update(blocking=True)
     print("done:", d)
+    print("reward:", r)
     print(env.joint.is_broken())  # while training check if the joint is broken and return terminal negative reward if yes
 
 env.reset()
@@ -75,6 +76,7 @@ for i in range(env.batch_T):
     rewards.append(r)
     env.renderer.update(blocking=True)
     print("done:", d)
+    print("reward:", r)
     print(env.joint.is_broken())
 print(np.sum(np.array(rewards)))
 print(f"spheres in a box :{env.scene.get_num_spheres_in_boxes()}")

@@ -174,6 +174,8 @@ class RobotEnv(BaseEnv):
         # print(self.q)
         # print(rewards)
         # print(sum(rewards.values()))
+        if self.joint.is_broken():
+            rewards['brake_occured'] = -10
         done_flag = self.iter == self.batch_T or self.joint.is_broken()
         return EnvStep(self.get_obs(), sum(rewards.values()) / self.horizon,
                        done_flag, EnvInfo())
