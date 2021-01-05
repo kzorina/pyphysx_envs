@@ -52,14 +52,12 @@ class RobotEnv(BaseEnv):
 
         self.scene.scene_setup()
         self.scene.add_aggregate(self.robot.get_aggregate())
-        for joint_name, joint in self.robot.movable_joints.items():
-            joint.configure_drive(stiffness=1e6, damping=1e5, force_limit=1e5, is_acceleration=False)
 
         # if self.demonstration_poses is not None:
         #     self.params['tool_init_position'] = self.demonstration_poses[0]
         self.scene.tool.set_global_pose(
             multiply_transformations(self.robot.last_link.get_global_pose(), self.tool_transform))
-        joint = D6Joint(self.robot.last_link, self.scene.tool, local_pose0=self.tool_transform)
+        self.joint = D6Joint(self.robot.last_link, self.scene.tool, local_pose0=self.tool_transform)
         self.scene.add_actor(self.scene.tool)
 
         self._action_space = FloatBox(low=-3.14 * np.ones(len(self.robot.get_joint_names())),

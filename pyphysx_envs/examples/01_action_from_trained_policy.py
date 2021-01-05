@@ -51,6 +51,10 @@ env = RobotEnv(scene_name='spade', tool_name='spade', robot_name='panda',
                )
 env.robot.set_init_q(q_trajectory_sampled[0, 2:])
 env.reset()
+env.joint.set_break_force(5000, 5000)  # prevents large forces that causes instability
+# to reset joint if it is broken:
+# env.joint.release()
+# and then create a new joint after release
 
 for i in range(len(demo_params['tip_poses'])):
     env.scene.path_spheres_act[i].set_global_pose(demo_params['tip_poses'][i])
@@ -61,5 +65,6 @@ for i in range(env.batch_T):
     o, r, d, info = env.step(action.detach().numpy())
     rewards.append(r)
     env.renderer.update(blocking=True)
+    print(env.joint.is_broken())  # while training check if the joint is broken and return terminal negative reward if yes
 print(np.sum(np.array(rewards)))
 print(f"spheres in a box :{env.scene.get_num_spheres_in_boxes()}")
