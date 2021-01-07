@@ -31,7 +31,7 @@ class SpadeTaskScene(Scene):
 
     def __init__(self, add_spheres=False, obs_add_sand=False, sphere_color='sandybrown', sand_deposit_length=0.4,
                  plane_static_friction=0., plane_dynamic_friction=0., plane_restitution=0.,
-                 sphere_static_friction=5., sphere_dynamic_friction=5.,
+                 sphere_static_friction=5., sphere_dynamic_friction=5., scene_demo_importance=1.,
                  spheres_reward_weigth=0.1, on_spade_reward_weight=0., out_of_box_sphere_reward=False,
                  negative_box_motion_reward=None, path_spheres_n=0, spade_default_params=None, **kwargs
                  ):
@@ -50,7 +50,7 @@ class SpadeTaskScene(Scene):
         self.obs_add_sand = obs_add_sand
         self.sphere_color = sphere_color
         self.sand_deposit_length = sand_deposit_length
-        self.demo_importance = 1.
+        self.demo_importance = scene_demo_importance
         self.offset = ([0., 0.045, 0.4], quat_from_euler("xyz", [-np.pi / 6, 0., 0.]))
         self.spheres_reward_weigth = spheres_reward_weigth
         self.on_spade_reward_weight = on_spade_reward_weight
@@ -65,7 +65,7 @@ class SpadeTaskScene(Scene):
         self.goal_box_pose = [1., 1., 0.]
         self.add_actor(self.goal_box_act)
         if self.add_spheres:
-            self.demo_importance = 0.2
+            self.demo_importance = 0.2 if self.demo_importance == 1 else self.demo_importance
             self.sand_box_act = create_actor_box(
                 ([0., 0., 0.05],
                  quat_from_euler("xyz", [0., 0., self.params['sand_buffer_yaw']])),
