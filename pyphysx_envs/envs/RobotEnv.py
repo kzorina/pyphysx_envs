@@ -18,10 +18,11 @@ class RobotEnv(BaseEnv):
     """
 
     def __init__(self, scene_name='spade', tool_name='spade', robot_name='panda', show_demo_tool=False,
-                 dq_limit_percentage=0.9, additional_objects=None, obs_add_q=False, **kwargs):
+                 dq_limit_percentage=0.9, additional_objects=None, obs_add_q=False, obs_add_action=False, **kwargs):
 
         self.show_demo_tool = show_demo_tool
         self.obs_add_q = obs_add_q
+        self.obs_add_action = obs_add_action
 
         self.scene = get_scene(scene_name, **kwargs)
         self.scene.tool = get_tool(tool_name, **kwargs)
@@ -63,6 +64,9 @@ class RobotEnv(BaseEnv):
         self._action_space = FloatBox(low=-3.14 * np.ones(len(self.robot.get_joint_names())),
                                       high=3.14 * np.ones(len(self.robot.get_joint_names())))
         self._observation_space = self.get_obs(return_space=True)
+        if self.obs_add_action:
+            self.prev_action = np.zeros(self._action_space.shape)
+
         self.sub_steps = 10
         self.sleep_steps = 10
         self.q = {}
@@ -99,6 +103,9 @@ class RobotEnv(BaseEnv):
                     *[joint.get_limits() for key, joint in self.robot.movable_joints.items()])
                 low += joint_low_limits
                 high += joint_up_limits
+            if self.obs_add_action:
+                low += [0] * (len(self.prev_action))
+                high += list(self.dq_limit)
             return FloatBox(low=low, high=high)  # spade_pose + goal_box_pos + sand pos
         tool_pos, tool_quat = self.scene.tool.get_global_pose()
         obs_list = [tool_pos, npq.as_float_array(tool_quat)]
@@ -107,6 +114,8 @@ class RobotEnv(BaseEnv):
             obs_list.append([t])
         if self.obs_add_q:
             obs_list.append(list(self.q.values()))
+        if self.obs_add_action:
+            obs_list.append(list(self.prev_action))
         obs_list.append(*scene_obs)
         return np.concatenate(obs_list).astype(np.float32)
 
@@ -128,6 +137,7 @@ class RobotEnv(BaseEnv):
         return self.get_obs()
 
     def step(self, action):
+        self.prev_action = action
         self.iter += 1
         for _ in range(self.sub_steps):
             for i, (joint_name, joint) in enumerate(self.robot.movable_joints.items()):
