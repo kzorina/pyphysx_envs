@@ -31,7 +31,7 @@ class BaseEnv(Env):
                                                       for k in set(self.params).intersection(
                 self.scene.default_params['variable'])})
         # standard multiplier for demo following
-        self.scene.demo_importance = 1.
+        # self.scene.demo_importance = 1.
 
         if demonstration_poses is not None and demonstration_q is not None:
             raise ValueError(
