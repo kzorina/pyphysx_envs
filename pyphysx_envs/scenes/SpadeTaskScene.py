@@ -81,7 +81,9 @@ class SpadeTaskScene(Scene):
                                    np.random.normal(scale=0.05, size=1)[0],
                                    i * 2 * 0.05])
                 a.set_mass(self.default_params['constant']['sphere_mass'])
-                # todo: check why we need it
+                # to prevent rotation of the spheres
+                a.set_max_linear_velocity(1)
+                a.set_max_angular_velocity(3.14)
                 a.set_angular_damping(500)
                 self.add_actor(a)
             self.sphere_store_pos = self.sim_spheres_until_stable()
@@ -201,7 +203,7 @@ class SpadeTaskScene(Scene):
         return {'constant': {
             'num_spheres': 200,
             'sphere_radius': 0.02,
-            'sphere_mass': 0.01,
+            'sphere_mass': 0.1,
             'sand_buffer_yaw': 0.
         },
             'variable': {
