@@ -1,7 +1,7 @@
 import numpy as np
 from pyphysx import *
-from pyphysx_envs.scenes import HammerTaskScene, SpadeTaskScene
-from pyphysx_envs.tools import HammerTool, SpadeTool
+from pyphysx_envs.scenes import HammerTaskScene, SpadeTaskScene, ScytheTaskScene
+from pyphysx_envs.tools import HammerTool, SpadeTool, ScytheTool
 from pyphysx_envs.robot import PandaRobot, TalosArmRobot
 
 
@@ -22,6 +22,8 @@ def get_scene(scene_name, **kwargs):
         return SpadeTaskScene(**kwargs)
     elif scene_name == 'hammer':
         return HammerTaskScene(**kwargs)
+    elif scene_name == 'scythe':
+        return ScytheTaskScene(**kwargs)
     else:
         raise NotImplementedError("Unknown scene '{}'".format(scene_name))
 
@@ -31,6 +33,8 @@ def get_tool(tool_name, **kwargs):
         return SpadeTool(**kwargs)
     elif tool_name == 'hammer':
         return HammerTool(**kwargs)
+    elif tool_name == 'scythe':
+        return ScytheTool(**kwargs)
     else:
         raise NotImplementedError("Unknown tool '{}'".format(tool_name))
 

@@ -22,6 +22,7 @@ class HammerTaskScene(Scene):
         self.nail_dim = nail_dim
         self.nail_pose = nail_pose
         self.nail_mass = nail_mass
+        self.additional_objects = None
 
 
     def add_nail_plank(self, nail_pose, color=None):
