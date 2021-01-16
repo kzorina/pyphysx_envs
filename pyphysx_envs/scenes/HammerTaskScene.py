@@ -7,7 +7,7 @@ import numpy as np
 class HammerTaskScene(Scene):
 
     def __init__(self, nail_static_friction=10., nail_dynamic_friction=10., nail_restitution=0.,
-                 other_static_friction=10., other_dynamic_friction=10.,
+                 other_static_friction=10., other_dynamic_friction=10., path_spheres_n=0,
                  nail_dim=((0.1, 0.1, 0.01), (0.01, 0.01, 0.3)),
                  nail_pose=(0.0, 0.0, 0.1), nail_mass=0.5, **kwargs):
         super().__init__(scene_flags=[
@@ -23,6 +23,7 @@ class HammerTaskScene(Scene):
         self.nail_pose = nail_pose
         self.nail_mass = nail_mass
         self.additional_objects = None
+        self.path_spheres_n = path_spheres_n
 
 
     def add_nail_plank(self, nail_pose, color=None):
@@ -65,6 +66,22 @@ class HammerTaskScene(Scene):
         joint = D6Joint(self.world, self.nail_act, local_pose0=[0., 0., 0.0])
         joint.set_motion(D6Axis.Z, D6Motion.LIMITED)
         joint.set_linear_limit(D6Axis.Z, lower_limit=0., upper_limit=0.1)
+        self.create_path_spheres()
+
+    def create_path_spheres(self):
+        # TODO: temp! remove
+
+        self.path_spheres_act = [RigidDynamic() for _ in range(self.path_spheres_n)]
+        for i, a in enumerate(self.path_spheres_act):
+            sphere = Shape.create_sphere(0.03, self.mat)
+            # sphere.set_user_data(dict(color=self.sphere_color))
+            sphere.set_flag(ShapeFlag.SIMULATION_SHAPE, False)
+            sphere.set_user_data({'color': [(1 - i / self.path_spheres_n), i / self.path_spheres_n, 0., 0.25]})
+            a.attach_shape(sphere)
+            a.set_global_pose([100, 100, i * 2 * 0.05])
+            a.set_mass(0.1)
+            a.disable_gravity()
+            self.add_actor(a)
 
     def reset_object_positions(self, params):
         self.nail_act.set_global_pose([params['nail_position'][0],
@@ -83,6 +100,14 @@ class HammerTaskScene(Scene):
 
     def get_environment_rewards(self):
         return {'nail_hammered': 1 if self.get_nail_z() < 0.001 else 0}
+
+    @property
+    def min_dist_between_scene_objects(self):
+        return 0.01
+
+    @property
+    def scene_object_params(self):
+        return (['nail_position'])
 
     def get_obs(self):
         obs = [[]]
