@@ -44,3 +44,8 @@ class HammerTool(RigidDynamic):
     def transform(self):
         # return ([0., 0., self.handle_length + self.head_width / 2], quat_from_euler('xyz', [np.deg2rad(0), np.deg2rad(0), np.deg2rad(0)]))
         return ([0, 0., self.handle_length + self.head_width / 2], quat_from_euler('xyz', [np.deg2rad(0), np.deg2rad(0), np.deg2rad(0)]))
+
+    @property
+    def to_tip_transform(self):
+        return ([0., 0., 0.],
+                quat_from_euler("xyz", [0., 0., 0.]))
