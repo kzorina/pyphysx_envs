@@ -5,6 +5,7 @@ from rlpyt.envs.base import EnvInfo, Env, EnvStep
 from pyphysx_envs.utils import get_tool, get_scene
 import quaternion as npq
 import numpy as np
+from scipy.spatial.transform import Rotation as R
 
 
 class ToolEnv(BaseEnv):
@@ -12,7 +13,9 @@ class ToolEnv(BaseEnv):
     Environment for tool moving in a scene
     """
 
-    def __init__(self, scene_name='spade', tool_name='spade', show_demo_tool=False, env_params=None, **kwargs):
+    def __init__(self, scene_name='spade', tool_name='spade', show_demo_tool=False,
+                 env_params=None, return_rewads=False, use_simulate=True,
+                 **kwargs):
         self.scene = get_scene(scene_name, **kwargs)
         self.scene.tool = get_tool(tool_name, **kwargs)
         super().__init__(**kwargs)
@@ -31,6 +34,8 @@ class ToolEnv(BaseEnv):
         self.reset()
         if self.render:
             self.renderer.add_physx_scene(self.scene)
+        self.return_rewads = return_rewads
+        self.use_simulate = use_simulate
 
     def set_params(self, params):
         self.params = params
@@ -62,7 +67,17 @@ class ToolEnv(BaseEnv):
         for _ in range(self.sub_steps):
             self.scene.tool.set_linear_velocity(action[:3])
             self.scene.tool.set_angular_velocity(action[3:])
-            self.scene.simulate(self.rate.period() / self.sub_steps)
+            if self.use_simulate:
+                self.scene.simulate(self.rate.period() / self.sub_steps)
+
+        if not self.use_simulate:
+            tool_pos, tool_quat = self.scene.tool.get_global_pose()
+            dt = self.rate.period()
+            new_tool_pos = tool_pos + dt * action[:3]
+            # npq.as_euler_angles()
+            new_tool_quat = R.from_matrix(npq.as_rotation_matrix(tool_quat).reshape((3, 3))).as_euler('xyz')
+            self.scene.tool.get_global_pose()
+
 
         tool_pos, tool_quat = self.scene.tool.get_global_pose()
         rewards = {}
@@ -82,7 +97,11 @@ class ToolEnv(BaseEnv):
             self.renderer.update(blocking=True)
             # for _ in range(self.sleep_steps):
             #     self.rate.sleep()
-        return EnvStep(self.get_obs(), sum(rewards.values()) / self.horizon,
+        if self.return_rewads:
+            return EnvStep(self.get_obs(), sum(rewards.values()) / self.horizon,
+                           self.iter == self.batch_T, EnvInfo()), rewards
+        else:
+            return EnvStep(self.get_obs(), sum(rewards.values()) / self.horizon,
                        self.iter == self.batch_T, EnvInfo())
 
 
