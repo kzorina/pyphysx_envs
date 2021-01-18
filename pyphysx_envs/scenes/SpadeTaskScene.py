@@ -30,7 +30,7 @@ def create_actor_box(pos, length_x=0.5, length_y=0.5, width=0.01, height=0.1, ma
 class SpadeTaskScene(Scene):
 
     def __init__(self, add_spheres=False, obs_add_sand=False, sphere_color='sandybrown', sand_deposit_length=0.4,
-                 plane_static_friction=0., plane_dynamic_friction=0., plane_restitution=0.,
+                 plane_static_friction=0.1, plane_dynamic_friction=0.1, plane_restitution=0.,
                  sphere_static_friction=5., sphere_dynamic_friction=5., scene_demo_importance=1.,
                  spheres_reward_weigth=0.1, on_spade_reward_weight=0., out_of_box_sphere_reward=False,
                  negative_box_motion_reward=None, path_spheres_n=0, spade_default_params=None, **kwargs
@@ -84,7 +84,7 @@ class SpadeTaskScene(Scene):
                 # to prevent rotation of the spheres
                 a.set_max_linear_velocity(1)
                 a.set_max_angular_velocity(3.14)
-                a.set_angular_damping(500)
+                a.set_angular_damping(10)
                 self.add_actor(a)
             self.sphere_store_pos = self.sim_spheres_until_stable()
 
