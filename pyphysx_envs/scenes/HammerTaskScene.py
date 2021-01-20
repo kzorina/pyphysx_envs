@@ -9,7 +9,7 @@ class HammerTaskScene(Scene):
     def __init__(self, nail_static_friction=10., nail_dynamic_friction=10., nail_restitution=0.,
                  other_static_friction=10., other_dynamic_friction=10., path_spheres_n=0,
                  nail_dim=((0.1, 0.1, 0.01), (0.01, 0.01, 0.3)),
-                 nail_pose=(0.0, 0.0, 0.1), nail_mass=0.5, **kwargs):
+                 nail_pose=(0.0, 0.0, 0.1), nail_mass=0.5, scene_demo_importance=1., **kwargs):
         super().__init__(scene_flags=[
             # SceneFlag.ENABLE_STABILIZATION,
             SceneFlag.ENABLE_FRICTION_EVERY_ITERATION,
@@ -24,6 +24,7 @@ class HammerTaskScene(Scene):
         self.nail_mass = nail_mass
         self.additional_objects = None
         self.path_spheres_n = path_spheres_n
+        self.demo_importance = scene_demo_importance
 
 
     def add_nail_plank(self, nail_pose, color=None):

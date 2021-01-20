@@ -122,8 +122,7 @@ class RobotEnv(BaseEnv):
     def reset(self):
         self.iter = 0
         self.params = params_fill_default(params_default=self.scene.default_params, params=self.params)
-        self.scene.tool.set_global_pose(self.params['tool_init_position'])
-
+        # self.scene.tool.set_global_pose(self.params['tool_init_position'])
         for i, name in enumerate(self.robot.get_joint_names()):
             self.q[name] = self.robot.init_q[i] + np.random.normal(0., 0.01)
         self.robot.reset_pose(self.q)
