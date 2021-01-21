@@ -7,7 +7,9 @@ import quaternion as npq
 import numpy as np
 import torch
 from pyphysx import *
-from pyphysx_utils.transformations import multiply_transformations, inverse_transform
+from pyphysx_utils.transformations import multiply_transformations, inverse_transform, pose_to_transformation_matrix
+from pyphysx_render.utils import gl_color_from_matplotlib
+import pyrender
 from pyphysx_envs.utils import params_fill_default
 
 
@@ -18,8 +20,11 @@ class RobotEnv(BaseEnv):
     """
 
     def __init__(self, scene_name='spade', tool_name='spade', robot_name='panda', show_demo_tool=False,
-                 dq_limit_percentage=0.9, additional_objects=None, obs_add_q=False, obs_add_action=False, **kwargs):
-
+                 dq_limit_percentage=0.9, additional_objects=None, obs_add_q=False, obs_add_action=False,
+                 velocity_violation_penalty=1., action_l2_regularization=0.,
+                 **kwargs):
+        self.action_l2_regularization = action_l2_regularization
+        self.velocity_violation_penalty = velocity_violation_penalty
         self.show_demo_tool = show_demo_tool
         self.obs_add_q = obs_add_q
         self.obs_add_action = obs_add_action
@@ -58,7 +63,7 @@ class RobotEnv(BaseEnv):
         #     self.params['tool_init_position'] = self.demonstration_poses[0]
         self.scene.tool.set_global_pose(
             multiply_transformations(self.robot.last_link.get_global_pose(), self.tool_transform))
-        self.joint = D6Joint(self.robot.last_link, self.scene.tool, local_pose0=self.tool_transform)
+        self.joint = None # D6Joint(self.robot.last_link, self.scene.tool, local_pose0=self.tool_transform)
         self.scene.add_actor(self.scene.tool)
         self.create_tool_joint()
         self._action_space = FloatBox(low=-3.14 * np.ones(len(self.robot.get_joint_names())),
@@ -74,7 +79,7 @@ class RobotEnv(BaseEnv):
             self.robot.init_q = self.demonstration_q[0]
         for i, name in enumerate(self.robot.get_joint_names()):
             self.q[name] = 0.
-        self.dq_limit = dq_limit_percentage * self.robot.max_dq_limit / self.rate.period()
+        self.dq_limit = dq_limit_percentage * self.robot.max_dq_limit
 
         self.t_tool = torch.eye(4)
         self.t_tool[:3, 3] = torch.tensor(self.tool_transform[0])
@@ -84,11 +89,35 @@ class RobotEnv(BaseEnv):
 
         # add scene to renderer
         if self.render:
-            self.renderer.add_physx_scene(self.scene)
+            # self.renderer.add_physx_scene(self.scene)
+            # the code bellow does the same things as add_physx_scene except it cachces sphere mesh to speed up creation
+            offset = np.zeros(3)
+            actors = self.scene.get_dynamic_rigid_actors() + self.scene.get_static_rigid_actors()
+            sphere_mesh = None
+            sphere_cache = {}
+            for i, actor in enumerate(actors):
+                shapes = actor.get_atached_shapes()
+                if len(shapes) == 1 and shapes[0].get_geometry_type() == GeometryType.SPHERE:
+                    shape = shapes[0]
+                    clr_string = shape.get_user_data().get('color', None) if shape.get_user_data() is not None else None
+                    key = str(clr_string)
+                    if key not in sphere_cache:
+                        sphere_cache[key] = self.renderer.shape_to_meshes(shape=shapes[0])[0]
+                    local_pose = pose_to_transformation_matrix(shape.get_local_pose())
+                    n = pyrender.Node(children=[pyrender.Node(mesh=sphere_cache[key], matrix=local_pose)])
+                else:
+                    n = self.renderer.actor_to_node(actor, (ShapeFlag.VISUALIZATION,))
+                if n is not None:
+                    self.renderer.nodes_and_actors.append((n, actor, offset))
+                    self.renderer.render_lock.acquire()
+                    self.renderer.scene.add_node(n)
+                    pose = multiply_transformations(offset, actor.get_global_pose())
+                    self.renderer.scene.set_pose(n, pose_to_transformation_matrix(pose))
+                    self.renderer.render_lock.release()
 
     def create_tool_joint(self):
         self.joint = D6Joint(self.robot.last_link, self.scene.tool, local_pose0=self.tool_transform)
-        self.joint.set_break_force(5000, 5000)
+        # self.joint.set_break_force(5000, 5000)
 
     def get_obs(self, return_space=False):
         scene_obs = self.scene.get_obs()
@@ -150,10 +179,13 @@ class RobotEnv(BaseEnv):
             #     self.rate.sleep()
         tool_pos, tool_quat = self.scene.tool.get_global_pose()
         rewards = {}
-        rewards['max_vel_penalty'] = -1 * np.linalg.norm(
-            np.maximum(np.zeros(len(self.dq_limit)), action - self.dq_limit))
-        rewards['min_vel_penalty'] = -1 * np.linalg.norm(
-            np.minimum(np.zeros(len(self.dq_limit)), action + self.dq_limit))
+
+        rewards['max_vel_penalty'] = -self.velocity_violation_penalty * \
+                                     np.linalg.norm(np.maximum(0., action - self.dq_limit))
+        rewards['min_vel_penalty'] = -self.velocity_violation_penalty * \
+                                     np.linalg.norm(np.minimum(0., action + self.dq_limit))
+        if self.action_l2_regularization > 0.:
+            rewards['action_l2'] = -self.action_l2_regularization * np.linalg.norm(action)
         rewards.update(self.scene.get_environment_rewards())
         if self.demonstration_poses is not None:
             # idd = np.clip(np.round(self.scene.simulation_time * self.demonstration_fps), 0,
