@@ -11,6 +11,7 @@ from pyphysx_utils.transformations import multiply_transformations, inverse_tran
 from pyphysx_render.utils import gl_color_from_matplotlib
 import pyrender
 from pyphysx_envs.utils import params_fill_default
+from pyphysx_render.meshcat_render import MeshcatViewer
 
 
 class RobotEnv(BaseEnv):
@@ -21,8 +22,9 @@ class RobotEnv(BaseEnv):
 
     def __init__(self, scene_name='spade', tool_name='spade', robot_name='panda', show_demo_tool=False,
                  dq_limit_percentage=0.9, additional_objects=None, obs_add_q=False, obs_add_action=False,
-                 velocity_violation_penalty=1., action_l2_regularization=0.,
+                 velocity_violation_penalty=1., action_l2_regularization=0., broken_joint_penalty=0.,
                  **kwargs):
+        self.broken_joint_penalty = broken_joint_penalty
         self.action_l2_regularization = action_l2_regularization
         self.velocity_violation_penalty = velocity_violation_penalty
         self.show_demo_tool = show_demo_tool
@@ -89,35 +91,38 @@ class RobotEnv(BaseEnv):
 
         # add scene to renderer
         if self.render:
-            # self.renderer.add_physx_scene(self.scene)
-            # the code bellow does the same things as add_physx_scene except it cachces sphere mesh to speed up creation
-            offset = np.zeros(3)
-            actors = self.scene.get_dynamic_rigid_actors() + self.scene.get_static_rigid_actors()
-            sphere_mesh = None
-            sphere_cache = {}
-            for i, actor in enumerate(actors):
-                shapes = actor.get_atached_shapes()
-                if len(shapes) == 1 and shapes[0].get_geometry_type() == GeometryType.SPHERE:
-                    shape = shapes[0]
-                    clr_string = shape.get_user_data().get('color', None) if shape.get_user_data() is not None else None
-                    key = str(clr_string)
-                    if key not in sphere_cache:
-                        sphere_cache[key] = self.renderer.shape_to_meshes(shape=shapes[0])[0]
-                    local_pose = pose_to_transformation_matrix(shape.get_local_pose())
-                    n = pyrender.Node(children=[pyrender.Node(mesh=sphere_cache[key], matrix=local_pose)])
-                else:
-                    n = self.renderer.actor_to_node(actor, (ShapeFlag.VISUALIZATION,))
-                if n is not None:
-                    self.renderer.nodes_and_actors.append((n, actor, offset))
-                    self.renderer.render_lock.acquire()
-                    self.renderer.scene.add_node(n)
-                    pose = multiply_transformations(offset, actor.get_global_pose())
-                    self.renderer.scene.set_pose(n, pose_to_transformation_matrix(pose))
-                    self.renderer.render_lock.release()
+            if isinstance(self.renderer, MeshcatViewer):
+                self.renderer.add_physx_scene(self.scene)
+            else:
+                # self.renderer.add_physx_scene(self.scene)
+                # the code bellow does the same things as add_physx_scene except it cachces sphere mesh to speed up creation
+                offset = np.zeros(3)
+                actors = self.scene.get_dynamic_rigid_actors() + self.scene.get_static_rigid_actors()
+                sphere_mesh = None
+                sphere_cache = {}
+                for i, actor in enumerate(actors):
+                    shapes = actor.get_atached_shapes()
+                    if len(shapes) == 1 and shapes[0].get_geometry_type() == GeometryType.SPHERE:
+                        shape = shapes[0]
+                        clr_string = shape.get_user_data().get('color', None) if shape.get_user_data() is not None else None
+                        key = str(clr_string)
+                        if key not in sphere_cache:
+                            sphere_cache[key] = self.renderer.shape_to_meshes(shape=shapes[0])[0]
+                        local_pose = pose_to_transformation_matrix(shape.get_local_pose())
+                        n = pyrender.Node(children=[pyrender.Node(mesh=sphere_cache[key], matrix=local_pose)])
+                    else:
+                        n = self.renderer.actor_to_node(actor, (ShapeFlag.VISUALIZATION,))
+                    if n is not None:
+                        self.renderer.nodes_and_actors.append((n, actor, offset))
+                        self.renderer.render_lock.acquire()
+                        self.renderer.scene.add_node(n)
+                        pose = multiply_transformations(offset, actor.get_global_pose())
+                        self.renderer.scene.set_pose(n, pose_to_transformation_matrix(pose))
+                        self.renderer.render_lock.release()
 
     def create_tool_joint(self):
         self.joint = D6Joint(self.robot.last_link, self.scene.tool, local_pose0=self.tool_transform)
-        # self.joint.set_break_force(5000, 5000)
+        self.joint.set_break_force(5000, 5000)
 
     def get_obs(self, return_space=False):
         scene_obs = self.scene.get_obs()
@@ -150,7 +155,7 @@ class RobotEnv(BaseEnv):
 
     def reset(self):
         self.iter = 0
-        self.params = params_fill_default(params_default=self.scene.default_params, params=self.params)
+        params = params_fill_default(params_default=self.scene.default_params, params=self.params)
         # self.scene.tool.set_global_pose(self.params['tool_init_position'])
         for i, name in enumerate(self.robot.get_joint_names()):
             self.q[name] = self.robot.init_q[i] + np.random.normal(0., 0.01)
@@ -158,7 +163,7 @@ class RobotEnv(BaseEnv):
         self.robot.update(self.rate.period() / self.sub_steps) # TODO: check if it will prevent spheres from randmly flying
         self.scene.tool.set_global_pose(
             multiply_transformations(self.robot.last_link.get_global_pose(), self.tool_transform))
-        self.scene.reset_object_positions(self.params)
+        self.scene.reset_object_positions(params)
         self.joint.release()
         self.create_tool_joint()
         self.scene.simulation_time = 0.
@@ -216,7 +221,7 @@ class RobotEnv(BaseEnv):
         # print(rewards)
         # print(sum(rewards.values()))
         if self.joint.is_broken():
-            rewards['brake_occured'] = -10
+            rewards['brake_occured'] = -self.broken_joint_penalty
         done_flag = self.iter == self.batch_T or self.joint.is_broken()
         return EnvStep(self.get_obs(), sum(rewards.values()) / self.horizon,
                        done_flag, EnvInfo())

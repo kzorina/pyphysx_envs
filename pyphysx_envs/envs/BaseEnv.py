@@ -2,6 +2,7 @@ from rlpyt.envs.base import EnvInfo, Env, EnvStep
 from pyphysx_envs.utils import params_fill_default
 from pyphysx_utils.rate import Rate
 from pyphysx_render.pyrender import PyPhysxViewer
+from pyphysx_render.meshcat_render import MeshcatViewer
 
 
 class BaseEnv(Env):
@@ -39,7 +40,11 @@ class BaseEnv(Env):
                 f"demonstration_q (len = {len(demonstration_q)}) cannot exist simultaneously")
         # set up renderer
         if self.render:
-            self.renderer = PyPhysxViewer(**render_dict if render_dict is not None else dict())
+            if render_dict is not None and 'use_meshcat' in render_dict and render_dict['use_meshcat']:
+                print('starting viewer')
+                self.renderer = MeshcatViewer(**render_dict if render_dict is not None else dict())
+            else:
+                self.renderer = PyPhysxViewer(**render_dict if render_dict is not None else dict())
 
     def step(self, action):
         raise NotImplementedError
