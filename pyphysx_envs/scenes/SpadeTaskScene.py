@@ -61,7 +61,7 @@ class SpadeTaskScene(Scene):
     def scene_setup(self):
         # self.renderer = renderer
         self.add_actor(RigidStatic.create_plane(material=self.mat_plane))
-        self.goal_box_act = create_actor_box([1., 1., 0.05], color='brown')
+        self.goal_box_act = create_actor_box([1., 1., 0.0], color='brown', height=0.1, width=0.01, mass=1.)
         self.goal_box_pose = [1., 1., 0.]
         self.add_actor(self.goal_box_act)
         if self.add_spheres:
@@ -124,16 +124,24 @@ class SpadeTaskScene(Scene):
         return last_pos
 
     def reset_object_positions(self, params):
-        self.goal_box_pose = [params['goal_box_position'][0], params['goal_box_position'][1], 0.]
-        self.goal_box_act.set_global_pose([params['goal_box_position'][0], params['goal_box_position'][1], 0.05])
+        self.goal_box_pose = [params['goal_box_position'][0], params['goal_box_position'][1], 0.0]
+        self.goal_box_act.set_global_pose(self.goal_box_pose)
+        self.goal_box_act.set_linear_velocity(np.zeros(3))
+        self.goal_box_act.set_angular_velocity(np.zeros(3))
+
         if self.add_spheres:
             self.sand_box_act.set_global_pose(
                 ([params['sand_buffer_position'][0], params['sand_buffer_position'][1], 0.],
                  quat_from_euler("xyz", [0., 0., params['sand_buffer_yaw']])))
+            self.sand_box_act.set_linear_velocity(np.zeros(3))
+            self.sand_box_act.set_angular_velocity(np.zeros(3))
             # reset sphere pos
             for i, sphere in enumerate(self.spheres_act):
                 sphere.set_global_pose(self.sphere_store_pos[i] + [params['sand_buffer_position'][0],
                                                                  params['sand_buffer_position'][1], 0.])
+                sphere.set_linear_velocity(np.zeros(3))
+                sphere.set_angular_velocity(np.zeros(3))
+
 
     def get_num_spheres_in_boxes(self):
         gpos = self.goal_box_act.get_global_pose()[0]
@@ -189,7 +197,10 @@ class SpadeTaskScene(Scene):
             rewards['box_displacement'] = -(1 - exponential_reward(self.goal_box_pose -
                                                                    self.goal_box_act.get_global_pose()[0], scale=1,
                                                                    b=10))
-
+        dist = np.linalg.norm(self.goal_box_pose - self.goal_box_act.get_global_pose()[0])
+        if dist > 0.05:
+            rewards['is_terminal'] = True
+            rewards['box_displacement'] = -10.
         return rewards
 
     def get_obs(self):
