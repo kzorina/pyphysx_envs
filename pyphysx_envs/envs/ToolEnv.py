@@ -64,20 +64,20 @@ class ToolEnv(BaseEnv):
 
     def step(self, action):
         self.iter += 1
-        for _ in range(self.sub_steps):
-            self.scene.tool.set_linear_velocity(action[:3])
-            self.scene.tool.set_angular_velocity(action[3:])
-            if self.use_simulate:
+        if self.use_simulate:
+            for _ in range(self.sub_steps):
+                self.scene.tool.set_linear_velocity(action[:3])
+                self.scene.tool.set_angular_velocity(action[3:])
                 self.scene.simulate(self.rate.period() / self.sub_steps)
-
-        if not self.use_simulate:
+        else:
             tool_pos, tool_quat = self.scene.tool.get_global_pose()
             dt = self.rate.period()
-            new_tool_pos = tool_pos + dt * action[:3]
-            # npq.as_euler_angles()
-            new_tool_quat = R.from_matrix(npq.as_rotation_matrix(tool_quat).reshape((3, 3))).as_euler('xyz')
-            self.scene.tool.get_global_pose()
-
+            # print(action[:3])
+            # print(dt)
+            new_tool_pos = tool_pos + dt * np.array(action[:3])
+            new_tool_quat = tool_quat * npq.from_rotation_vector(dt * np.array(action[3:]))
+            self.scene.tool.set_global_pose((new_tool_pos, new_tool_quat))
+            self.scene.prev_tool_velocity = action
 
         tool_pos, tool_quat = self.scene.tool.get_global_pose()
         rewards = {}
@@ -89,7 +89,8 @@ class ToolEnv(BaseEnv):
             dpos, dquat = self.demonstration_poses[idd]
             if self.show_demo_tool:
                 self.scene.demo_tool.set_global_pose((dpos, dquat))
-            rewards['demo_positions'] = exponential_reward(tool_pos - dpos, scale=self.scene.demo_importance * 0.5, b=10)
+            rewards['demo_positions'] = exponential_reward(tool_pos - dpos, scale=self.scene.demo_importance * 0.5,
+                                                           b=10)
             rewards['demo_orientation'] = exponential_reward([npq.rotation_intrinsic_distance(tool_quat, dquat)],
                                                              scale=self.scene.demo_importance * 0.5, b=1)
         # print(rewards)
@@ -102,8 +103,4 @@ class ToolEnv(BaseEnv):
                            self.iter == self.batch_T, EnvInfo()), rewards
         else:
             return EnvStep(self.get_obs(), sum(rewards.values()) / self.horizon,
-                       self.iter == self.batch_T, EnvInfo())
-
-
-
-
+                           self.iter == self.batch_T, EnvInfo())
