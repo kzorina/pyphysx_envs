@@ -70,14 +70,16 @@ class ToolEnv(BaseEnv):
                 self.scene.tool.set_angular_velocity(action[3:])
                 self.scene.simulate(self.rate.period() / self.sub_steps)
         else:
-            tool_pos, tool_quat = self.scene.tool.get_global_pose()
-            dt = self.rate.period()
-            # print(action[:3])
-            # print(dt)
-            new_tool_pos = tool_pos + dt * np.array(action[:3])
-            new_tool_quat = tool_quat * npq.from_rotation_vector(dt * np.array(action[3:]))
-            self.scene.tool.set_global_pose((new_tool_pos, new_tool_quat))
-            self.scene.prev_tool_velocity = action
+            # dt = self.rate.period()
+            for _ in range(self.sub_steps):
+                tool_pos, tool_quat = self.scene.tool.get_global_pose()
+                new_tool_pos = tool_pos + (self.rate.period() / self.sub_steps) * np.array(action[:3])
+                new_tool_quat = npq.from_rotation_vector(
+                    (self.rate.period() / self.sub_steps) * np.array(action[3:])) * tool_quat
+                rewards = {}
+                rewards.update(self.scene.get_environment_rewards())
+                self.scene.tool.set_global_pose((new_tool_pos, new_tool_quat))
+                self.scene.prev_tool_velocity = action
 
         tool_pos, tool_quat = self.scene.tool.get_global_pose()
         rewards = {}
