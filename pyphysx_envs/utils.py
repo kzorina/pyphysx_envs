@@ -62,11 +62,7 @@ def follow_tool_tip_traj(env, poses, reward_to_track='spheres', add_end_steps=10
     action = np.random.normal(size=env._action_space.shape)
     for _ in range(5):
         _, rewards = env.step(action)
-    # base_spheres = 0
     base_reward_to_track = rewards[reward_to_track]
-
-    # print("Generating movement")
-    # while env.renderer.is_active:
     total_reward_to_track = 0
     traj_follow_reward = 0
     for i in range(len(poses) + add_end_steps):
@@ -80,20 +76,10 @@ def follow_tool_tip_traj(env, poses, reward_to_track='spheres', add_end_steps=10
 
         handle_pos, handle_quat = env.scene.tool.get_global_pose()
         lin_vel = (desired_handle_pos - handle_pos) / env.rate.period()
-        # r1 = npq.as_rotation_matrix(desired_handle_quat).reshape((3, 3))
-        # r0_inv = npq.as_rotation_matrix(handle_quat).reshape((3, 3)).T
-        # r = npq.as_euler_angles(npq.from_rotation_matrix(r1.dot(r0_inv)))  # / env.rate.period()
-        # r_r = R.from_matrix(r1.dot(r0_inv)).as_euler('xyz')
-        # ang_vel = r_r / env.rate.period()
-        ang_vel = npq.as_rotation_vector(handle_quat ** (-1) * desired_handle_quat) / env.rate.period()
+        ang_vel = npq.as_rotation_vector(desired_handle_quat * handle_quat.inverse()) / env.rate.period()
         _, rewards = env.step([*lin_vel, *ang_vel])
-        # print(rewards)
-        # for _ in range(2):
-        #     env.step(np.zeros(env._action_space.shape))
-        # print(rewards['spheres']- base_spheres)
-        # print((rewards['spheres'] - base_spheres) / len(poses))
-        # spheres_reward += 0
         total_reward_to_track += (rewards[reward_to_track] - base_reward_to_track) / len(poses)
+        # total_reward_to_track += (rewards[reward_to_track] - base_reward_to_track + rewards['box_displacement'])/ len(poses)
 
         rewards['demo_positions'] = exponential_reward(handle_pos - desired_handle_pos, scale=0.5, b=10)
         rewards['demo_orientation'] = exponential_reward([npq.rotation_intrinsic_distance(handle_quat, desired_handle_quat)],

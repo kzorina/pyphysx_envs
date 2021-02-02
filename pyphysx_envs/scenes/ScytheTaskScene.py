@@ -10,9 +10,12 @@ class GrassItem(RigidDynamic):
         self.cutted = False
 
 
+import time
+
+
 class ScytheTaskScene(Scene):
 
-    def __init__(self, grass_patch_n=1, grass_patch_locations=((0., 0.),), grass_patch_yaws=(0.,), grass_per_patch=10,
+    def __init__(self, grass_patch_n=1, dict_grass_patch_locations=None, dict_grass_patch_yaws=None, grass_per_patch=10,
                  grass_patch_len=0.4, grass_patch_width=0.1, grass_height=0.3, grass_width=0.005,
                  path_spheres_n=0, threshold_cuting_vel=0.0000002,
                  max_cut_height=0.1, min_cut_vel=0.1, **kwargs):
@@ -21,10 +24,16 @@ class ScytheTaskScene(Scene):
             SceneFlag.ENABLE_FRICTION_EVERY_ITERATION,
             SceneFlag.ENABLE_CCD
         ])
-
-        self.grass_patch_n = grass_patch_n
-        self.grass_patch_locations = grass_patch_locations
-        self.grass_patch_yaws = grass_patch_yaws
+        # [f'grass_patch_location_{i}' for i in range(self.grass_patch_n)]
+        self.grass_patch_n = grass_patch_n if dict_grass_patch_locations is None else len(dict_grass_patch_locations)
+        if dict_grass_patch_locations is None:
+            self.grass_patch_locations = [(i, i) for i in range(self.grass_patch_n)]
+        else:
+            self.grass_patch_locations = [value for key, value in dict_grass_patch_locations.items()]
+        if dict_grass_patch_yaws is None:
+            self.grass_patch_yaws = [1 * i for i in range(self.grass_patch_n)]
+        else:
+            self.grass_patch_yaws = [value for key, value in dict_grass_patch_yaws.items()]
         self.grass_per_patch = grass_per_patch
         self.grass_patch_len = grass_patch_len
         self.grass_patch_width = grass_patch_width
@@ -40,21 +49,24 @@ class ScytheTaskScene(Scene):
         self.path_spheres_n = path_spheres_n
         self.threshold_cuting_vel = threshold_cuting_vel
         self.prev_tool_pose = None
-        self.prev_tool_velocity = 0
+        self.prev_tool_velocity = np.zeros(6)
 
     def rotate_around_center(self, center=(0., 0.), point=(0., 0.), angle=0.):
         x_new = (point[0] - center[0]) * np.cos(angle) - (point[1] - center[1]) * np.sin(angle) + center[0]
         y_new = (point[0] - center[0]) * np.sin(angle) - (point[1] - center[1]) * np.cos(angle) + center[1]
         return x_new, y_new
 
-    def add_grass_patch(self, location, n_grass, yaw, color=(0., 0.8, 0., 0.25), demo=True):
-        grass_group = [GrassItem() for _ in range(n_grass)]
-        cutted_grass_group = [GrassItem() for _ in range(n_grass)]
-        generate_positions = [[*self.rotate_around_center(location, (x, y), yaw), self.grass_height / 2] for x, y in
-                              zip(np.random.uniform(location[0] - self.grass_patch_len / 2,
-                                                    location[0] + self.grass_patch_len / 2, n_grass),
-                                  np.random.uniform(location[1] - self.grass_patch_width / 2,
-                                                    location[1] + self.grass_patch_width / 2, n_grass))]
+    def generate_grass_poses(self, location, yaw):
+        return [[*self.rotate_around_center(location, (x, y), yaw), self.grass_height / 2] for x, y in
+                zip(np.random.uniform(location[0] - self.grass_patch_len / 2,
+                                      location[0] + self.grass_patch_len / 2, self.grass_per_patch),
+                    np.random.uniform(location[1] - self.grass_patch_width / 2,
+                                      location[1] + self.grass_patch_width / 2, self.grass_per_patch))]
+
+    def add_grass_patch(self, location, yaw, color=(0., 0.8, 0., 0.25), demo=True):
+        grass_group = [GrassItem() for _ in range(self.grass_per_patch)]
+        cutted_grass_group = [GrassItem() for _ in range(self.grass_per_patch)]
+        generate_positions = self.generate_grass_poses(location, yaw)
         for i, a in enumerate(grass_group):
             grass = Shape.create_box([self.grass_width, self.grass_width, self.grass_height], self.mat_grass)
             if demo:
@@ -86,7 +98,7 @@ class ScytheTaskScene(Scene):
         self.world.set_global_pose([0., 0., 0.])
         self.add_actor(self.world)
         for i in range(self.grass_patch_n):
-            self.add_grass_patch(self.grass_patch_locations[i], self.grass_per_patch, self.grass_patch_yaws[i])
+            self.add_grass_patch(self.grass_patch_locations[i], self.grass_patch_yaws[i])
 
         self.create_path_spheres()
         self.contact_sphere_act = RigidDynamic()
@@ -115,6 +127,16 @@ class ScytheTaskScene(Scene):
             self.add_actor(a)
 
     def reset_object_positions(self, params):
+        update_grass_pos = []
+        for i in range(self.grass_patch_n):
+            if f'grass_patch_location_{i}' in params:
+                update_grass_pos += self.generate_grass_poses(params[f'grass_patch_location_{i}'],
+                                                              params[
+                                                                  f'grass_patch_yaw_{i}'] if f'grass_patch_yaw_{i}' in params else 0)
+        if len(update_grass_pos) == len(self.grass_pos):
+            self.grass_pos = update_grass_pos
+        # else:
+        #     print(f"WARNING: Poses are not updated due to the old_new ({len(self.grass_pos)}_{len(update_grass_pos)}) len mismach")
         for act, pos in zip(self.grass_act, self.grass_pos):
             act.set_global_pose(pos)
 
@@ -157,37 +179,44 @@ class ScytheTaskScene(Scene):
                     np.linalg.norm(x1_pose[0][:2] - grass_item.get_global_pose()[0][:2]) < radius):
                 # find closest point
 
-                x1 = x0_pose[0]
-                x2 = x1_pose[0]
-                y1 = grass_item.get_global_pose()[0] - [0., 0., self.grass_height / 2]
-                # print('y1: ', y1)
+                x1 = x0_pose[0]  # start of the blade in world coord
+                x2 = x1_pose[0]  # end of the blade in world coord
+                y1 = grass_item.get_global_pose()[0] - [0., 0., self.grass_height / 2]  # grass at ground
+
                 d, s, t = self.blade_to_grass_dist(x1, x2, y1, min_dist=0.1)
                 t = t / np.linalg.norm(x2 - x1)
-                # print('distance: ', d)
-                if d < self.grass_width:
+                if d < self.grass_width * 10:
+
                     scythe_point_z0 = np.array([x1[0] + t * (x2[0] - x1[0]), x1[1] + t * (x2[1] - x1[1]), 0])
+                    grass_z0 = [y1[0], y1[1], 0]
+                    scythe_to_grass = grass_z0 - scythe_point_z0
+                    # angle between distance vector from scythe to grass and scythe normal in blade dir
+                    u = multiply_transformations(x0_pose, [0., 0., -1])[0] - x0_pose[0]
+                    v = scythe_to_grass
+                    angle_scythe_dist = abs(np.arccos(np.dot(u, v) / (np.linalg.norm(u) * np.linalg.norm(v))))
+                    print(angle_scythe_dist)
+                    if angle_scythe_dist > np.pi / 6:
+                        break
+
                     point_of_contact = [x1[0] + t * (x2[0] - x1[0]),
                                         x1[1] + t * (x2[1] - x1[1]),
                                         x1[2] + t * (x2[2] - x1[2])]
-                    base_to_point_of_con = multiply_transformations(self.tool.to_x0_blade_transform, point_of_contact)
-                    print('point_of_contact    ', point_of_contact)
-                    print('base_to_point_of_con', base_to_point_of_con)
-                    self.contact_sphere_act.set_global_pose(point_of_contact)
-                    x0_z0 = [y1[0], y1[1], 0]
-                    # print(f"grass item {i} is touched")
-                    self.cutted_grass_act[i].set_global_pose(grass_item.get_global_pose())
-                    # print(f"red grass {i} is moved to {grass_item.get_global_pose()}")
-                    self.grass_act[i].set_global_pose([10 + i * 0.1, -0.5, 0])
-                    scythe_to_grass = x0_z0 - scythe_point_z0
-                    # get point velocity
-                    # todo: convert obj velocity to point velocity
-                    print('vel                 ', self.prev_tool_velocity[:3])
+                    # from body frame to contact point
+                    base_to_point_of_con = multiply_transformations(inverse_transform(x1), point_of_contact)
+                    # self.grass_act[i].set_global_pose([10 + i * 0.1, -0.5, 0])
+
+                    # get point of contact velocity
                     point_velocity = self.prev_tool_velocity[:3] + np.cross(self.prev_tool_velocity[3:],
                                                                             base_to_point_of_con[0])
-                    print('point_velocity      ', point_velocity)
                     scythe_to_grass_vel = np.dot(point_velocity, scythe_to_grass)
-                    # print('velocity: ', scythe_to_grass_vel)
+                    # time.sleep(5 )
+
                     if scythe_to_grass_vel > self.threshold_cuting_vel:
+                        print('velocity: ', scythe_to_grass_vel)
+                        self.contact_sphere_act.set_global_pose(point_of_contact)
+                        self.cutted_grass_act[i].set_global_pose(grass_item.get_global_pose())
+                        self.grass_act[i].set_global_pose([10 + i * 0.1, -0.5, 0])
+                        # time.sleep(5)
                         # print("grass item is cutted")
                         grass_item.cutted = True
 
@@ -200,7 +229,7 @@ class ScytheTaskScene(Scene):
 
     @property
     def scene_object_params(self):
-        return ([f'grass_patch_locations_{i}' for i in range(self.grass_patch_n)])
+        return ([f'grass_patch_location_{i}' for i in range(self.grass_patch_n)])
 
     @property
     def min_dist_between_scene_objects(self):
