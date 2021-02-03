@@ -9,7 +9,6 @@ import torch
 from pyphysx import *
 from pyphysx_utils.transformations import multiply_transformations, inverse_transform, pose_to_transformation_matrix
 from pyphysx_render.utils import gl_color_from_matplotlib
-import pyrender
 from pyphysx_envs.utils import params_fill_default
 from pyphysx_render.meshcat_render import MeshcatViewer
 
@@ -23,7 +22,10 @@ class RobotEnv(BaseEnv):
     def __init__(self, scene_name='spade', tool_name='spade', robot_name='panda', show_demo_tool=False,
                  dq_limit_percentage=0.9, additional_objects=None, obs_add_q=False, obs_add_action=False,
                  velocity_violation_penalty=1., action_l2_regularization=0., broken_joint_penalty=0.,
+                 increase_velocity_penalty_factor=0., increase_velocity_start_itr=0,
                  **kwargs):
+        self.increase_velocity_penalty_factor = increase_velocity_penalty_factor
+        self.increase_velocity_start_itr = increase_velocity_start_itr
         self.broken_joint_penalty = broken_joint_penalty
         self.action_l2_regularization = action_l2_regularization
         self.velocity_violation_penalty = velocity_violation_penalty
@@ -154,6 +156,13 @@ class RobotEnv(BaseEnv):
         return np.concatenate(obs_list).astype(np.float32)
 
     def reset(self):
+        if self.increase_velocity_start_itr < 0:
+            self.velocity_violation_penalty += self.increase_velocity_penalty_factor
+        else:
+            self.increase_velocity_start_itr -= 1
+
+        if self.render and isinstance(self.renderer, MeshcatViewer):
+            self.renderer.publish_animation()
         self.iter = 0
         params = params_fill_default(params_default=self.scene.default_params, params=self.params)
         # self.scene.tool.set_global_pose(self.params['tool_init_position'])
