@@ -1,7 +1,6 @@
 from rlpyt.envs.base import EnvInfo, Env, EnvStep
 from pyphysx_envs.utils import params_fill_default
 from pyphysx_utils.rate import Rate
-from pyphysx_render.pyrender import PyPhysxViewer
 from pyphysx_render.meshcat_render import MeshcatViewer
 
 
@@ -44,6 +43,7 @@ class BaseEnv(Env):
                 print('starting viewer')
                 self.renderer = MeshcatViewer(**render_dict if render_dict is not None else dict())
             else:
+                from pyphysx_render.pyrender import PyPhysxViewer  # import pyphysx viewer only if needed
                 self.renderer = PyPhysxViewer(**render_dict if render_dict is not None else dict())
 
     def step(self, action):
