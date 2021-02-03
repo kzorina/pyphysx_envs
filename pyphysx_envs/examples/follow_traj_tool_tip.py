@@ -13,7 +13,8 @@ rewards_to_track = {'spade': 'spheres', 'hammer': 'nail_hammered', 'scythe': 'cu
 tool_name = 'hammer'
 reward_to_track_name = rewards_to_track[tool_name]
 
-alignment_filename = '../data/hammer_alignment_video1.pkl'
+# alignment_filename = '../data/07_params_count_10_smth_1.05_0.89'
+alignment_filename = '../data/06_params_count_10_smth_0.98_0.91'
 # folder_path = '/home/kzorina/Work/learning_from_video/data/alignment_res_new/hammer/video_1/scale_1/'
 # from os import listdir
 # from os.path import isfile, join
@@ -69,6 +70,8 @@ def follow_tool_tip_traj(env, poses):
         ang_vel = npq.as_rotation_vector(desired_handle_quat * handle_quat.inverse()) / env.rate.period()
 
         _, rewards = env.step([*lin_vel, *ang_vel])
+        if 'is_terminal' in rewards and rewards['is_terminal']:
+            print('Terminal reward obtained.')
         print(rewards)
         reward_to_track += rewards[reward_to_track_name] / len(poses)
         if rewards[reward_to_track_name]:

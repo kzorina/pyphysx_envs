@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, List
 from pyphysx import *
 import numpy as np
 
@@ -27,6 +27,7 @@ class HammerTaskScene(Scene):
         self.nail_act: Optional[RigidDynamic] = None
         self.holder_act: Optional[RigidStatic] = None
         self.joint: Optional[D6Joint] = None
+        self.tool: Optional[RigidDynamic] = None
 
     def add_nail_plank(self, nail_pose):
         nail_act = RigidDynamic()
@@ -87,8 +88,22 @@ class HammerTaskScene(Scene):
     def get_nail_z(self, ):
         return self.joint.get_relative_transform()[0][2]
 
+    def _nail_hammer_overlaps(self):
+        shapes: List[Shape] = self.tool.get_atached_shapes()
+        for s in shapes:
+            ud = s.get_user_data()
+            if ud is not None and 'name' in ud and ud['name'] == 'hammer_head':
+                for ns in self.nail_act.get_atached_shapes():
+                    if s.overlaps(ns, self.tool.get_global_pose(), self.nail_act.get_global_pose()):
+                        return True
+                return False
+        return False
+
     def get_environment_rewards(self):
-        return {'nail_hammered': 1 if self.get_nail_z() < 0.001 else 0}
+        return {
+            'nail_hammered': 1 if self.get_nail_z() < 0.001 else 0,
+            'is_terminal': self._nail_hammer_overlaps()
+        }
 
     @property
     def min_dist_between_scene_objects(self):
