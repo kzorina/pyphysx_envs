@@ -35,7 +35,10 @@ env = ToolEnv(scene_name=tool_name, tool_name=tool_name,
               grass_patch_n=2,
               threshold_cuting_vel=0.5,
               spade_mesh_path=path.join(path.dirname(path.dirname(__file__)), 'data/spade_mesh.obj'),
-              params=alignment_params, render_dict=dict(viewport_size=(2000, 1500))
+              params=alignment_params,
+              render_dict=dict(
+                  use_meshcat=True, open_meshcat=True, wait_for_open=True, render_to_animation=True, animation_fps=24,
+              )
               )
 
 # count = 0
@@ -43,6 +46,7 @@ env = ToolEnv(scene_name=tool_name, tool_name=tool_name,
 # # for i in range(0, len(poses), 5):
 #     env.scene.path_spheres_act[count].set_global_pose(poses[i])
 #     count += 1
+
 
 def follow_tool_tip_traj(env, poses):
     # env.params['tool_init_position'] = poses[0]
@@ -54,7 +58,6 @@ def follow_tool_tip_traj(env, poses):
     start_time = time.time()
     for i in range(len(poses) + 10):
         # for i in range(21):
-        time.sleep(0.1)
         id = min(i, len(poses) - 1)
         desired_handle_pos, desired_handle_quat = poses[id][0], poses[id][1]
         # desired_handle_pos, desired_handle_quat = multiply_transformations((poses[id][0], poses[id][1]),
@@ -85,11 +88,13 @@ def follow_tool_tip_traj(env, poses):
     print(time.time() - start_time)
     return reward_to_track, traj_follow_reward, nail_hammered_id
 
+
 _, _, nail_hammered_id = follow_tool_tip_traj(env, poses)
-    # if nail_hammered_id is not None:
-        # print("SUCCESS: ", alignment_filename)
-        # print(nail_hammered_id)
-        # alignment_params = pickle.load(open(alignment_filename, "rb"))
-        # alignment_params['tip_poses'] = alignment_params['tip_poses'][:nail_hammered_id]
-        # pickle.dump(alignment_params, open(save_alinment_path, "wb"))
-        # break
+env.renderer.publish_animation()
+# if nail_hammered_id is not None:
+# print("SUCCESS: ", alignment_filename)
+# print(nail_hammered_id)
+# alignment_params = pickle.load(open(alignment_filename, "rb"))
+# alignment_params['tip_poses'] = alignment_params['tip_poses'][:nail_hammered_id]
+# pickle.dump(alignment_params, open(save_alinment_path, "wb"))
+# break

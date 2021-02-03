@@ -1,6 +1,5 @@
+from typing import Optional
 from pyphysx import *
-# from utils import
-from pyphysx_utils.transformations import multiply_transformations, inverse_transform
 import numpy as np
 
 
@@ -25,9 +24,11 @@ class HammerTaskScene(Scene):
         self.additional_objects = None
         self.path_spheres_n = path_spheres_n
         self.demo_importance = scene_demo_importance
+        self.nail_act: Optional[RigidDynamic] = None
+        self.holder_act: Optional[RigidStatic] = None
+        self.joint: Optional[D6Joint] = None
 
-
-    def add_nail_plank(self, nail_pose, color=None):
+    def add_nail_plank(self, nail_pose):
         nail_act = RigidDynamic()
         nail_act.attach_shape(Shape.create_box(self.nail_dim[0], self.mat_nail))
         tip: Shape = Shape.create_box(self.nail_dim[1], self.mat_nail)
@@ -37,36 +38,30 @@ class HammerTaskScene(Scene):
         nail_act.set_mass(self.nail_mass)
         nail_act.disable_gravity()
         self.add_actor(nail_act)
-        holder1_act = RigidStatic()
-        holder1_act.attach_shape(Shape.create_box([0.1, 0.1, 0.1], self.mat))
-        holder1_act.set_global_pose([nail_pose[0],
-                                          nail_pose[1] + 0.05 + self.nail_dim[0][2] / 2,
-                                          nail_pose[2] - 0.1 - 0.05 - self.nail_dim[0][2]])
-        self.add_actor(holder1_act)
-        holder2_act = RigidStatic()
-        holder2_act.attach_shape(Shape.create_box([0.1, 0.1, 0.1], self.mat))
-        holder2_act.set_global_pose([nail_pose[0], nail_pose[1] - 0.05 - self.nail_dim[0][2] / 2,
-                                          nail_pose[2] - 0.1 - 0.05 - self.nail_dim[0][2]])
-        self.add_actor(holder2_act)
-        return nail_act, holder1_act, holder2_act
+
+        holder = RigidStatic()
+        b: Shape = Shape.create_box([0.1, 0.1, 0.3], self.mat)
+        b.set_user_data({'color': [0.0, 1., 0., 0.5]})
+        b.set_local_pose([0., 0.05 + self.nail_dim[0][2] / 2, -0.15 - self.nail_dim[0][2]])
+        holder.attach_shape(b)
+        b: Shape = Shape.create_box([0.1, 0.1, 0.3], self.mat)
+        b.set_user_data({'color': [0.0, 1., 0., 0.5]})
+        b.set_local_pose([0., -0.05 - self.nail_dim[0][2] / 2, -0.15 - self.nail_dim[0][2]])
+        holder.attach_shape(b)
+        holder.set_global_pose(nail_pose)
+        self.add_actor(holder)
+
+        return nail_act, holder
 
     def scene_setup(self):
-        self.nail_act, self.holder1_act, self.holder2_act = self.add_nail_plank(self.nail_pose)
+        self.nail_act, self.holder_act = self.add_nail_plank(self.nail_pose)
         if self.additional_objects is not None:
             for nail_pose in self.additional_objects.get('nail_positions', []):
-                new_nail_act, _, _ = self.add_nail_plank(nail_pose)
+                new_nail_act, _ = self.add_nail_plank(nail_pose)
 
-        self.world = RigidStatic()
-        self.world.set_global_pose([0.0, 0.0, 0.])
-        self.add_actor(self.world)
-        # plank = RigidDynamic()
-        # plank.attach_shape(Shape.create_box([0.1, 0.1, 0.01], head_mat))
-        # plank.set_global_pose([0, 0.075, 0.005])
-        # plank.disable_gravity()
-        # scene.add_actor(plank)
-        joint = D6Joint(self.world, self.nail_act, local_pose0=[0., 0., 0.0])
-        joint.set_motion(D6Axis.Z, D6Motion.LIMITED)
-        joint.set_linear_limit(D6Axis.Z, lower_limit=0., upper_limit=0.1)
+        self.joint = D6Joint(self.holder_act, self.nail_act, local_pose0=[0., 0., 0.0])
+        self.joint.set_motion(D6Axis.Z, D6Motion.LIMITED)
+        self.joint.set_linear_limit(D6Axis.Z, lower_limit=0., upper_limit=0.1)
         self.create_path_spheres()
 
     def create_path_spheres(self):
@@ -85,19 +80,12 @@ class HammerTaskScene(Scene):
             self.add_actor(a)
 
     def reset_object_positions(self, params):
-        self.nail_act.set_global_pose([params['nail_position'][0],
-                                       params['nail_position'][1], self.nail_pose[2]])
-        self.holder1_act.set_global_pose([params['nail_position'][0],
-                                          params['nail_position'][1] + 0.05 + self.nail_dim[0][2] / 2,
-                                          self.nail_pose[2] - 0.1 - 0.05 - self.nail_dim[0][2]])
-        self.holder2_act.set_global_pose([params['nail_position'][0],
-                                          params['nail_position'][1] - 0.05 - self.nail_dim[0][2] / 2,
-                                          self.nail_pose[2] - 0.1 - 0.05 - self.nail_dim[0][2]])
-        self.world.set_global_pose([params['nail_position'][0],
-                                    params['nail_position'][1], 0.])
+        """ Reset objects positions, s.t. nail is 10cm about nail_position (i.e. not nailed). """
+        self.nail_act.set_global_pose(params['nail_position'] + np.array([0., 0., 0.1]))
+        self.holder_act.set_global_pose(params['nail_position'])
 
-    def get_nail_z(self,):
-        return self.nail_act.get_global_pose()[0][2]
+    def get_nail_z(self, ):
+        return self.joint.get_relative_transform()[0][2]
 
     def get_environment_rewards(self):
         return {'nail_hammered': 1 if self.get_nail_z() < 0.001 else 0}
