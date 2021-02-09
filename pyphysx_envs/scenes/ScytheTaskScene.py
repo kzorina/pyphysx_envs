@@ -185,7 +185,9 @@ class ScytheTaskScene(Scene):
 
                 d, s, t = self.blade_to_grass_dist(x1, x2, y1, min_dist=0.1)
                 t = t / np.linalg.norm(x2 - x1)
-                if d < self.grass_width * 10:
+                if x1[2] + t * (x2[2] - x1[2]) > self.max_cut_height:
+                    break
+                if d < self.grass_width * 4:
 
                     scythe_point_z0 = np.array([x1[0] + t * (x2[0] - x1[0]), x1[1] + t * (x2[1] - x1[1]), 0])
                     grass_z0 = [y1[0], y1[1], 0]
