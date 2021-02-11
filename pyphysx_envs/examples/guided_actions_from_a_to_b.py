@@ -4,6 +4,7 @@ from os import path
 import time
 import quaternion as npq
 from pyphysx_utils.urdf_robot_parser import quat_from_euler
+import tqdm
 
 sleep_sec = 0.01
 # start_tool_pose = (np.array([1.8, 1, 0.05]), quat_from_euler("xyz", [0., 1.5707963, 0.]))
@@ -32,15 +33,17 @@ print('general lin vel', lin_vel)
 print(ang_vel)
 env.reset()
 env.scene.tool.set_global_pose(start_tool_pose)
-time.sleep(10)
-while env.renderer.is_active:
-    for i in range(steps):
-        # if i % 20 == 0:
-        #     print(i)
-        env.step([*lin_vel, *ang_vel])
-        # print(env.scene.tool.get_global_pose())
-        env.renderer.update()
-        if sleep_sec > 0:
-            time.sleep(sleep_sec)
-    env.renderer.publish_animation()
-    exit(100)
+# time.sleep(10)
+env.step(np.zeros(6))
+
+stime = time.time()
+for i in tqdm.trange(steps):
+    # if i % 20 == 0:
+    #     print(i)
+    env.step([*lin_vel, *ang_vel])
+    # print(env.scene.tool.get_global_pose())
+    env.renderer.update()
+    # if sleep_sec > 0:
+    #     time.sleep(sleep_sec)
+print(f'Time: {time.time() - stime}')
+env.renderer.publish_animation()
