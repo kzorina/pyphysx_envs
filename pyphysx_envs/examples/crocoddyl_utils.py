@@ -52,7 +52,8 @@ def create_spheres_for_targets(viz, targets, size=0.1, colors=None):
 
 class ActionModelRobot2D(crocoddyl.ActionModelAbstract):
     def __init__(self, target_pose=((0.5, 0.5, 0.5), np.eye(3)), dt=0.01, base_opt=False,
-                 u_weight=0.01, jpos_weight=0.001, nq=7, last_link="spade_tip",
+                 u_weight=0.01, jpos_weight=0.001, barier_weight=1., pose_weight=1., pose_rot_scale=1.,
+                 nq=7, last_link="spade_tip",
                  robot_model=None, robot_data=None, q_ref=np.zeros(7)):
         state_vector = crocoddyl.StateVector(nq)
         crocoddyl.ActionModelAbstract.__init__(
@@ -64,6 +65,10 @@ class ActionModelRobot2D(crocoddyl.ActionModelAbstract):
         self.dt = dt
         self.u_weight = u_weight
         self.jpos_weight = jpos_weight
+        self.pose_weight = pose_weight
+        self.pose_rot_scale = pose_rot_scale
+        self.barier_weight = barier_weight
+        self.barrier_scale = 1.
         self.nq = nq
         self.last_link = last_link
         self.robot_model = robot_model
@@ -72,7 +77,6 @@ class ActionModelRobot2D(crocoddyl.ActionModelAbstract):
         self.q_ref = q_ref
         self.q_lower = np.array([-100, -100, -2.9671, -1.8326, -2.9671, -3.1416, -2.9671, -0.0873, -2.9671])
         self.q_upper = np.array([100, 100, 2.9671, 1.8326, 2.9671, 0.0, 2.9671, 3.8223, 2.9671])
-        self.barrier_scale = 1
 
         # self.bounds = crocoddyl.ActivationBounds(self.q_lower, self.q_upper, 1.)
         # self.costs = crocoddyl.CostModelState(state_vector, crocoddyl.ActivationModelQuadraticBarrier(self.bounds),
@@ -135,10 +139,12 @@ class ActionModelRobot2D(crocoddyl.ActionModelAbstract):
         if self.base_opt:
             data.r[:] = np.zeros(len(data.r))
         else:
-            data.r[:6] = 10 * pin.log(self.deltaM).vector  # Todo: ADD weight (10) here and tune it + decouple pos and rot part
+            lg = pin.log(self.deltaM).vector
+            data.r[:3] = self.pose_weight * lg[:3]
+            data.r[3:6] = self.pose_weight * self.pose_rot_scale * lg[3:]
             data.r[6:6 + self.nq] = self.u_weight * u  # regularization, penalize large velocities
             data.r[6 + self.nq:6 + self.nq * 2] = self.jpos_weight * (jpos - self.q_ref)
-            data.r[6 + self.nq * 2:6 + self.nq * 3] = self.q_barrier(jpos)
+            data.r[6 + self.nq * 2:6 + self.nq * 3] = self.barier_weight * self.q_barrier(jpos)
         # print("data_r", data.r)
         data.cost = .5 * sum(data.r ** 2)
         # self.costs.calc(data.costs, x, u)
