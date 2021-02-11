@@ -70,10 +70,10 @@ def follow_tool_tip_traj(env, poses, reward_to_track='spheres', add_end_steps=10
         # time.sleep(0.05)
         demo_id = min(i, len(poses) - 1)
         # print(f"at {demo_id} time is {(demo_id + 5) * env.rate.period()}")
-        desired_handle_pos, desired_handle_quat = poses[demo_id][0], poses[demo_id][1]
-        # desired_handle_pos, desired_handle_quat = multiply_transformations((poses[demo_id][0], poses[demo_id][1]),
-        #                                                                    inverse_transform(
-        #                                                                        env.scene.tool.to_tip_transform))
+        # desired_handle_pos, desired_handle_quat = poses[demo_id][0], poses[demo_id][1]
+        desired_handle_pos, desired_handle_quat = multiply_transformations((poses[demo_id][0], poses[demo_id][1]),
+                                                                           inverse_transform(
+                                                                               env.scene.tool.to_tip_transform))
 
         handle_pos, handle_quat = env.scene.tool.get_global_pose()
         lin_vel = (desired_handle_pos - handle_pos) / env.rate.period()
