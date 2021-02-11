@@ -11,10 +11,27 @@ import time
 rewards_to_track = {'spade': 'spheres', 'hammer': 'nail_hammered', 'scythe': 'cutted_grass'}
 # tool_name = 'scythe'
 tool_name = 'hammer'
+# tool_name = 'spade'
+video_id = 1
 reward_to_track_name = rewards_to_track[tool_name]
 
-# alignment_filename = '../data/07_params_count_10_smth_1.05_0.89'
-alignment_filename = '../data/06_params_count_10_smth_0.98_0.91'
+save_alinment_path = f'../data/{tool_name}_alignment_video{video_id}.pkl'
+# alignment_filename = f'../data/{tool_name}_alignment_video{video_id}.pkl'
+
+#### Spade
+# alignment_filename = '/home/kzorina/Work/learning_from_video/data/alignment_res_new/spade/video_1/scale_1/00_params_count_10_smth_0.99_0.05'
+
+#### Hammer
+alignment_filename = '/home/kzorina/Work/learning_from_video/data/alignment_res_new/hammer/video_1/scale_1/01_params_count_10_smth_1.05_0.05'
+# alignment_filename = '/home/kzorina/Work/learning_from_video/data/alignment_res_new/hammer/video_2/scale_1/01_params_count_10_smth_1.06_0.44'
+# alignment_filename = '/home/kzorina/Work/learning_from_video/data/alignment_res_new/hammer/video_3/scale_1/11_params_count_10_smth_1.01_0.94'
+# alignment_filename = '/home/kzorina/Work/learning_from_video/data/alignment_res_new/hammer/video_4/scale_1/18_params_count_10_smth_1.06_0.73'
+# alignment_filename = '/home/kzorina/Work/learning_from_video/data/alignment_res_new/hammer/video_5/scale_1/06_params_count_10_smth_1.02_0.76'
+
+#### Scythe
+# alignment_filename = '/home/kzorina/Work/learning_from_video/data/alignment_res_new/scythe/video_2/scale_1/01_params_count_04_smth_1.04_0.01'
+# alignment_filename = '/home/kzorina/Work/learning_from_video/data/alignment_res_new/scythe/video_3/scale_1/01_params_count_02_smth_1.05_0.01'
+
 # folder_path = '/home/kzorina/Work/learning_from_video/data/alignment_res_new/hammer/video_1/scale_1/'
 # from os import listdir
 # from os.path import isfile, join
@@ -32,24 +49,27 @@ env = ToolEnv(scene_name=tool_name, tool_name=tool_name,
               render=True,
               return_rewads=True,
               add_spheres=True,
-              use_simulate=True,
+              use_simulate=False if tool_name == 'scythe' else True,
+              nail_dim=((0.05, 0.05, 0.01), (0.01, 0.01, 0.2)),
               grass_patch_n=2,
               threshold_cuting_vel=0.5,
               spade_mesh_path=path.join(path.dirname(path.dirname(__file__)), 'data/spade_mesh.obj'),
               params=alignment_params,
               render_dict=dict(
+                  # show_frames=True,
                   use_meshcat=True, open_meshcat=True, wait_for_open=True, render_to_animation=True, animation_fps=24,
               )
               )
 
-# count = 0
-# for i in range(len(poses)):
-# # for i in range(0, len(poses), 5):
-#     env.scene.path_spheres_act[count].set_global_pose(poses[i])
-#     count += 1
+
+count = 0
+for i in range(len(poses)):
+# for i in range(0, len(poses), 5):
+    env.scene.path_spheres_act[count].set_global_pose(poses[i])
+    count += 1
 
 
-def follow_tool_tip_traj(env, poses):
+def follow_tool_tip_traj(env, poses, reward_to_track_name, tool_name):
     # env.params['tool_init_position'] = poses[0]
     nail_hammered_id = None
     env.reset()
@@ -57,13 +77,14 @@ def follow_tool_tip_traj(env, poses):
     traj_follow_reward = 0
     printed = False
     start_time = time.time()
+    real_poses = []
     for i in range(len(poses) + 10):
         # for i in range(21):
         id = min(i, len(poses) - 1)
-        desired_handle_pos, desired_handle_quat = poses[id][0], poses[id][1]
-        # desired_handle_pos, desired_handle_quat = multiply_transformations((poses[id][0], poses[id][1]),
-        #                                                                    inverse_transform(
-        #                                                                        env.scene.tool.to_tip_transform))
+        # desired_handle_pos, desired_handle_quat = poses[id][0], poses[id][1]
+        desired_handle_pos, desired_handle_quat = multiply_transformations((poses[id][0], poses[id][1]),
+                                                                           inverse_transform(
+                                                                               env.scene.tool.to_tip_transform))
 
         handle_pos, handle_quat = env.scene.tool.get_global_pose()
         lin_vel = (desired_handle_pos - handle_pos) / env.rate.period()
@@ -79,7 +100,7 @@ def follow_tool_tip_traj(env, poses):
                 print(i)
                 if tool_name == 'hammer':
                     # nail_hammered_id = i
-                    return reward_to_track, traj_follow_reward, i
+                    return reward_to_track, traj_follow_reward, i, {}
                 printed = True
 
         rewards['demo_positions'] = exponential_reward(handle_pos - desired_handle_pos, scale=0.5, b=10)
@@ -87,17 +108,24 @@ def follow_tool_tip_traj(env, poses):
             [npq.rotation_intrinsic_distance(handle_quat, desired_handle_quat)],
             scale=0.5, b=1)
 
+        real_poses.append(multiply_transformations(env.scene.tool.get_global_pose(), env.scene.tool.to_tip_transform))
+
         traj_follow_reward += (rewards['demo_positions'] + rewards['demo_orientation']) / len(poses)
     print(time.time() - start_time)
-    return reward_to_track, traj_follow_reward, nail_hammered_id
+
+    return reward_to_track, traj_follow_reward, nail_hammered_id, real_poses
 
 
-_, _, nail_hammered_id = follow_tool_tip_traj(env, poses)
+_, _, nail_hammered_id, real_poses = follow_tool_tip_traj(env, poses, reward_to_track_name, tool_name)
 env.renderer.publish_animation()
-# if nail_hammered_id is not None:
-# print("SUCCESS: ", alignment_filename)
-# print(nail_hammered_id)
-# alignment_params = pickle.load(open(alignment_filename, "rb"))
-# alignment_params['tip_poses'] = alignment_params['tip_poses'][:nail_hammered_id]
+# alignment_params['tip_poses'] = real_poses
 # pickle.dump(alignment_params, open(save_alinment_path, "wb"))
+if nail_hammered_id is not None:
+    # print("SUCCESS: ", alignment_filename)
+    # print(nail_hammered_id)
+    # alignment_params = pickle.load(open(alignment_filename, "rb"))
+    alignment_params['tip_poses'] = alignment_params['tip_poses'][:nail_hammered_id + 1]
+    pickle.dump(alignment_params, open(save_alinment_path, "wb"))
+else:
+    pickle.dump(alignment_params, open(save_alinment_path, "wb"))
 # break

@@ -31,10 +31,15 @@ class HammerTaskScene(Scene):
 
     def add_nail_plank(self, nail_pose):
         nail_act = RigidDynamic()
-        nail_act.attach_shape(Shape.create_box(self.nail_dim[0], self.mat_nail))
-        tip: Shape = Shape.create_box(self.nail_dim[1], self.mat_nail)
+        nail_act.attach_shape(Shape.create_box(self.nail_dim[0], self.mat_nail))  # head of nail
+        nail_head_tip: Shape = Shape.create_box((1.2 * self.nail_dim[0][0], 1.2 * self.nail_dim[0][1], 0.4 * self.nail_dim[0][2]), self.mat_nail)
+        nail_head_tip.set_flag(ShapeFlag.SIMULATION_SHAPE, False)
+        nail_head_tip.set_user_data({'color': 'tab:gray', 'name': 'nail_head'})
+        tip: Shape = Shape.create_box((0.6 * self.nail_dim[1][0], 0.6 * self.nail_dim[1][1], self.nail_dim[1][2]),
+                                      self.mat_nail)
         tip.set_local_pose([0., 0., -(self.nail_dim[0][2] / 2 + self.nail_dim[1][2] / 2)])
         nail_act.attach_shape(tip)
+        nail_act.attach_shape(nail_head_tip)
         nail_act.set_global_pose(nail_pose)
         nail_act.set_mass(self.nail_mass)
         nail_act.disable_gravity()

@@ -54,8 +54,9 @@ class ActionModelRobot2D(crocoddyl.ActionModelAbstract):
     def __init__(self, target_pose=((0.5, 0.5, 0.5), np.eye(3)), dt=0.01, base_opt=False,
                  u_weight=0.01, jpos_weight=0.001, nq=7, last_link="spade_tip",
                  robot_model=None, robot_data=None, q_ref=np.zeros(7)):
+        state_vector = crocoddyl.StateVector(nq)
         crocoddyl.ActionModelAbstract.__init__(
-            self, crocoddyl.StateVector(nq), nq, 6 + 3 * nq,  # state dim, action dim, and residual dim
+            self, state_vector, nq, 6 + 3 * nq,  # state dim, action dim, and residual dim
         )
         # self.target = target
         self.M_target = pin.SE3(np.array(target_pose[1]), np.array(target_pose[0]))
@@ -67,24 +68,52 @@ class ActionModelRobot2D(crocoddyl.ActionModelAbstract):
         self.last_link = last_link
         self.robot_model = robot_model
         self.robot_data = robot_data
+        # self.robot_model.defaultState = np.concatenate([q_ref, np.zeros(self.robot_model.nv)])
         self.q_ref = q_ref
         self.q_lower = np.array([-100, -100, -2.9671, -1.8326, -2.9671, -3.1416, -2.9671, -0.0873, -2.9671])
         self.q_upper = np.array([100, 100, 2.9671, 1.8326, 2.9671, 0.0, 2.9671, 3.8223, 2.9671])
-        self.barrier_scale = 10
+        self.barrier_scale = 1
+
+        # self.bounds = crocoddyl.ActivationBounds(self.q_lower, self.q_upper, 1.)
+        # self.costs = crocoddyl.CostModelState(state_vector, crocoddyl.ActivationModelQuadraticBarrier(self.bounds),
+        #                                      self.robot_model.defaultState)
 
     def q_barrier(self, x):
-        return np.tanh(-(x - self.q_lower) * self.barrier_scale) + 1 + np.tanh(
-            (x - self.q_upper) * self.barrier_scale) + 1
+        # d->rlb_min_ = (r - bounds_.lb).array().min(Scalar(0.));
+        # d->rub_max_ = (r - bounds_.ub).array().max(Scalar(0.));
+        # data->a_value =
+        # Scalar(0.5) * d->rlb_min_.matrix().squaredNorm() + Scalar(0.5) * d->rub_max_.matrix().squaredNorm();
+        rlb_min = np.minimum((x - self.q_lower), np.zeros(len(x)))
+        rlb_max = np.maximum((x - self.q_upper), np.zeros(len(x)))
+        return 0.5 * (self.barrier_scale * rlb_min) ** 2 + 0.5 * (self.barrier_scale * rlb_max) ** 2
+        # return np.tanh(-(x - self.q_lower) * self.barrier_scale) + 1 + np.tanh(
+        #     (x - self.q_upper) * self.barrier_scale) + 1
 
     def q_barrier_dx(self, x):
-        y = self.barrier_scale * (x - self.q_lower)
-        z = self.barrier_scale * (x - self.q_upper)
-        return self.barrier_scale * (1 / np.cosh(y) ** 2 - 1 / np.cosh(z) ** 2)
+        rlb_min = np.minimum((x - self.q_lower), np.zeros_like(x))
+        rlb_max = np.maximum((x - self.q_upper), np.zeros_like(x))
+        return self.barrier_scale * rlb_min + self.barrier_scale * rlb_max
 
     def q_barrier_dxx(self, x):
-        y = self.barrier_scale * (x - self.q_lower)
-        z = self.barrier_scale * (x - self.q_upper)
-        return 2 * self.barrier_scale ** 2 * (np.tanh(y) / np.cosh(y) ** 2 + np.tanh(z) / np.cosh(z) ** 2)
+        out = np.zeros_like(x)
+        out[x < self.q_lower] = self.barrier_scale
+        out[x > self.q_upper] = self.barrier_scale
+        return out
+
+
+    # def q_barrier(self, x):
+    #     return np.tanh(-(x - self.q_lower) * self.barrier_scale) + 1 + np.tanh(
+    #         (x - self.q_upper) * self.barrier_scale) + 1
+    #
+    # def q_barrier_dx(self, x):
+    #     y = self.barrier_scale * (x - self.q_lower)
+    #     z = self.barrier_scale * (x - self.q_upper)
+    #     return self.barrier_scale * (1 / np.cosh(y) ** 2 - 1 / np.cosh(z) ** 2)
+    #
+    # def q_barrier_dxx(self, x):
+    #     y = self.barrier_scale * (x - self.q_lower)
+    #     z = self.barrier_scale * (x - self.q_upper)
+    #     return 2 * self.barrier_scale ** 2 * (np.tanh(y) / np.cosh(y) ** 2 + np.tanh(z) / np.cosh(z) ** 2)
 
     def calc(self, data, x, u=None):
         """ u is acceleration """
@@ -101,17 +130,20 @@ class ActionModelRobot2D(crocoddyl.ActionModelAbstract):
         pin.updateFramePlacements(self.robot_model, self.robot_data)
         # print(robot_model.getFrameId(self.last_link))
         M = self.robot_data.oMf[self.robot_model.getFrameId(self.last_link)]
-        # M_target = pin.SE3(pin.utils.rotate('x', np.pi),
-        #                    np.array(self.target))
+
         self.deltaM = self.M_target.inverse() * M
         if self.base_opt:
             data.r[:] = np.zeros(len(data.r))
         else:
-            data.r[:6] = pin.log(self.deltaM).vector
+            data.r[:6] = 10 * pin.log(self.deltaM).vector  # Todo: ADD weight (10) here and tune it + decouple pos and rot part
             data.r[6:6 + self.nq] = self.u_weight * u  # regularization, penalize large velocities
             data.r[6 + self.nq:6 + self.nq * 2] = self.jpos_weight * (jpos - self.q_ref)
             data.r[6 + self.nq * 2:6 + self.nq * 3] = self.q_barrier(jpos)
+        # print("data_r", data.r)
         data.cost = .5 * sum(data.r ** 2)
+        # self.costs.calc(data.costs, x, u)
+        # add_cost = data.costs.cost
+        # print(add_cost)
 
         return data.xnext, data.cost
 
@@ -121,22 +153,20 @@ class ActionModelRobot2D(crocoddyl.ActionModelAbstract):
         if u is None:
             u = self.unone
         xnext, cost = self.calc(data, x, u)
-        # Cost derivatives
-
-        # J = pin.computeFrameJacobian(self.rmodel, self.rdata, q, self.frameIndex)
-        # r = self.residual(q)
-        # Jlog = pin.Jlog6(self.deltaM)
-        # return 2 * J.T @ Jlog.T @ r
-
-        # J = pin.computeFrameJacobian(robot_model, robot_data, x[:nq], robot_model.getFrameId("panda_link8"),
-        #                                    pin.LOCAL_WORLD_ALIGNED)
-        # Jlog = pin.Jlog6(self.deltaM)
-        # data.Lx[:nq] = 2 * J.T.dot(Jlog.T).dot(data.r[:6]) + 0. * data.r[6 + nq:6 + nq * 2]
+        # pin.forwardKinematics(self.robot_model, self.robot_data, x[:self.nq], u)
 
         J = pin.computeFrameJacobian(self.robot_model, self.robot_data, x[:self.nq],
                                      self.robot_model.getFrameId(self.last_link))
         r = data.r[:6]
         Jlog = pin.Jlog6(self.deltaM)
+
+
+        # self.costs.calcDiff(data.costs, x, u)
+
+        # print(J.T @ Jlog.T @ r)
+        # print(self.jpos_weight * data.r[6 + self.nq:6 + self.nq * 2])
+        # print(self.q_barrier_dx(x))
+        # print(self.q_barrier_dxx(x))
         data.Lx[:self.nq] = J.T @ Jlog.T @ r + self.jpos_weight * data.r[6 + self.nq:6 + self.nq * 2] + self.q_barrier_dx(
             x) + self.q_barrier_dxx(x)
 

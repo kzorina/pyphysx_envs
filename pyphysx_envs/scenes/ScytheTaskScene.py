@@ -17,7 +17,7 @@ class ScytheTaskScene(Scene):
 
     def __init__(self, grass_patch_n=1, dict_grass_patch_locations=None, dict_grass_patch_yaws=None, grass_per_patch=10,
                  grass_patch_len=0.4, grass_patch_width=0.1, grass_height=0.3, grass_width=0.005,
-                 path_spheres_n=0, threshold_cuting_vel=0.0000002,
+                 path_spheres_n=0, threshold_cuting_vel=0.0000002, scene_demo_importance=1.,
                  max_cut_height=0.1, min_cut_vel=0.1, **kwargs):
         super().__init__(scene_flags=[
             # SceneFlag.ENABLE_STABILIZATION,
@@ -41,6 +41,7 @@ class ScytheTaskScene(Scene):
         self.grass_width = grass_width
         self.max_cut_height = max_cut_height
         self.min_cut_vel = min_cut_vel
+        self.demo_importance = scene_demo_importance
 
         self.mat_grass = Material()
         self.grass_act = []

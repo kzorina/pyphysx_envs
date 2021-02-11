@@ -6,13 +6,23 @@ import quaternion as npq
 from pyphysx_utils.urdf_robot_parser import quat_from_euler
 
 sleep_sec = 0.01
-end_tool_pose = (np.array([1.8, 1, 0.05]), quat_from_euler("xyz", [0., 1.5707963, 0.]))
-start_tool_pose = (np.array([0.8, 1, 0.05]), quat_from_euler("xyz", [0., 1.5707963, 0.]))
+# start_tool_pose = (np.array([1.8, 1, 0.05]), quat_from_euler("xyz", [0., 1.5707963, 0.]))
+# end_tool_pose = (np.array([0.8, 1, 0.05]), quat_from_euler("xyz", [0., 1.5707963, 0.]))
+
+# end_tool_pose = (np.array([1.8, 1, 0.05]), quat_from_euler("xyz", [0., 1.5707963, 0.]))
+# start_tool_pose = (np.array([0.8, 1, 0.05]), quat_from_euler("xyz", [0., 1.5707963, 0.]))
+
+start_tool_pose = (np.array([1.8, 1.2, 0.05]), quat_from_euler("xyz", [0., 1.5707963, 1.]))
+end_tool_pose = (np.array([0.8, 1.2, 0.05]), quat_from_euler("xyz", [0., 1.5707963, 1.]))
+
 steps = 400
 
 env = ToolEnv(scene_name='scythe', tool_name='scythe', render=True,
-               use_simulate=False, dict_grass_patch_locations=dict(grass_patch_location_0=(1.5, 1.2),),
-              render_dict=dict(viewport_size=(2000, 1500), viewer_flags=dict(view_center=(1.5, 1.2, 0))))
+              use_simulate=False, dict_grass_patch_locations=dict(grass_patch_location_0=(1.5, 1.2), ),
+              render_dict=dict(use_meshcat=True, open_meshcat=True, wait_for_open=True, render_to_animation=True,
+                               animation_fps=24, )
+              # render_dict=dict(viewport_size=(2000, 1500), viewer_flags=dict(view_center=(1.5, 1.2, 0)))
+              )
 
 desired_tool_pos, desired_tool_quat = end_tool_pose
 handle_pos, handle_quat = start_tool_pose
@@ -32,4 +42,5 @@ while env.renderer.is_active:
         env.renderer.update()
         if sleep_sec > 0:
             time.sleep(sleep_sec)
+    env.renderer.publish_animation()
     exit(100)

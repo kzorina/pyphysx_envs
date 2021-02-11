@@ -8,7 +8,8 @@ import pickle
 
 # filename = path.join(path.dirname(path.dirname(__file__)), 'data/trained_policy/itr_0.pkl')
 # filename = path.join(path.dirname(path.dirname(__file__)), 'data/trained_policy/itr_99.pkl')
-filename = path.join(path.dirname(path.dirname(__file__)), 'data/trained_policy/itr_3699.pkl')
+# filename = path.join(path.dirname(path.dirname(__file__)), 'data/trained_policy/itr_3699.pkl')
+filename = "/home/kzorina/Work/learning_from_video/data/exp2_new_env_new_demo/run_25/itr_3099.pkl"
 model_dict = torch.load(filename)['agent_state_dict']
 
 input_size = 15
@@ -47,7 +48,9 @@ env = RobotEnv(scene_name='spade', tool_name='spade', robot_name='panda',
                robot_pose=(x_base, y_base, 0.),
                robot_urdf_path=path.join(path.dirname(path.dirname(__file__)), 'data/franka_panda/panda_no_hand.urdf'),
                robot_mesh_path=path.join(path.dirname(path.dirname(__file__)), 'data/franka_panda'),
-               params=demo_params, render_dict=dict()
+               params=demo_params, render_dict=dict(),
+               sphere_static_friction=1,
+               sphere_dynamic_friction=1,
                )
 env.robot.set_init_q(q_trajectory_sampled[0, 2:])
 env.reset()

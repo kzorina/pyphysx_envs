@@ -2,13 +2,15 @@ from crocoddyl_utils import *
 import crocoddyl
 from matplotlib import pyplot as plt
 
-tool = 'spade'
-
-save_path = f"{tool}_video_1_ddp_traj.pkl"
+# tool = 'scythe'
+tool = 'hammer'
+# tool = 'spade'
+video_id = 1
+save_path = f"{tool}_video_{video_id}_ddp_traj.pkl"
 # save_path = '/home/kzorina/Work/pyphysx_envs/spade_video_1_ddp_traj_jpos0.pkl'
 # filepath = '/home/kzorina/Work/learning_from_video/data/alignment_res_new/hammer/video_1/scale_1/alignment.pkl'
 # filepath = '/home/kzorina/Work/learning_from_video/data/alignment_res_new/spade/video_1/scale_1/00_params_count_10_smth_0.99_0.05'
-filepath = '../data/spade_alignment_video1.pkl'
+filepath = f'../data/{tool}_alignment_video{video_id}.pkl'
 demo_params = pickle.load(open(filepath, 'rb'))
 print(demo_params.keys())
 target_poses = []
@@ -58,12 +60,12 @@ q_ref = [0., 0., 0., 0., 0.2, -1.3, -0.1, 1.2, 0.]
 
 
 last_link_set = f'{tool}_tip'
-# diff = 'num'
-diff = 'anal'
+diff = 'num'
+# diff = 'anal'
 u_weight = 0.1
-jpos_weight = 0.1
-horizon = 50
-base_opt_steps = 50
+jpos_weight = 0
+horizon = 10
+base_opt_steps = 10
 dt = 0.01
 
 params_dict = {'diff': diff, 'u_weight': u_weight, 'jpos_weight': jpos_weight,
@@ -73,41 +75,74 @@ print(params_dict)
 action_models_list = []
 base_opt_action_models_list = []
 # x0 = np.zeros(nq)
-x0 = 0.1 * np.ones(nq)
-u = 0.1 * np.ones(nq)
+x0 = np.random.randn(nq) / 100
+u = np.random.randn(nq) / 100
 kwargs_action_model = dict(dt=dt, jpos_weight=jpos_weight, u_weight=u_weight, last_link=last_link_set, nq=nq,
                            robot_model=robot_model, robot_data=robot_data, q_ref=q_ref)
 
 
 
 
-# #### TO CHECK NUM VS DIFF
-#
+# # #### TO CHECK NUM VS DIFF
+# x0 = np.random.randn(nq) / 100
+# u = np.random.randn(nq) / 100
+# #
 # check_for_base_opt = False
 # action_model = ActionModelRobot2D(target_pose=target_poses[0], base_opt=check_for_base_opt, **kwargs_action_model)
 # model_data = action_model.createData()
-# print("x0: ", x0)
+# # model_data.costs = action_model.costs.createData(model_data.pinocchio)
+# # model_data.costs.shareMemory(model_data)
+# # print("x0: ", x0)
 # action_model.calc(model_data, x0, u)
+# data_r_after_calc = model_data.r.copy()
+# # print(data_r_after_calc.shape)
 # action_model.calcDiff(model_data, x0, u)
+# data_r_after_calc_diff = model_data.r.copy()
 # # print("Analytical Lx: ", model_data.Lx)
-# # print("Analytical Lxx: ", model_data.Lxx)
+# print("Analytical Lxx: ", model_data.Lxx)
 # # print("Analytical Lu: ", model_data.Lu)
 # # print("Analytical Luu: ", model_data.Luu)
 # # print("Analytical Fx: ", model_data.Fx)
-# print("Analytical Fu: ", model_data.Fu)
+# # print("Analytical Fu: ", model_data.Fu)
 #
 # action_model = ActionModelRobot2D(target_pose=target_poses[0], base_opt=check_for_base_opt, **kwargs_action_model)
 # action_model_num_diff = crocoddyl.ActionModelNumDiff(action_model)
 # model_data_num_diff = action_model_num_diff.createData()
 #
 # action_model_num_diff.calc(model_data_num_diff, x0, u)
+# # print(model_data_num_diff.r)
+# data_r_after_calc_nd = model_data_num_diff.r.copy()
+# # print("data_r_after_calc_nd", data_r_after_calc_nd)
 # action_model_num_diff.calcDiff(model_data_num_diff, x0, u)
+# data_r_after_calc_diff_nd = model_data_num_diff.r.copy()
+#
 # # print("Numerical Lx: ", model_data_num_diff.Lx)
-# # print("Numerical Lxx: ", model_data_num_diff.Lxx)
+# print("Numerical Lxx: ", model_data_num_diff.Lxx)
 # # print("Numerical Lu: ", model_data_num_diff.Lu)
 # # print("Numerical Luu: ", model_data_num_diff.Luu)
 # # print("Numerical Fx: ", model_data_num_diff.Fx)
-# print("Numerical Fu: ", model_data_num_diff.Fu)
+# # print("Numerical Fu: ", model_data_num_diff.Fu)
+#
+# # print("data.r bef aft anal matched? - ", np.isclose(data_r_after_calc - data_r_after_calc_diff, np.zeros(data_r_after_calc.shape), atol=1.e-5).all())
+# # print("data.r bef aft num matched? - ", np.isclose(data_r_after_calc_nd - data_r_after_calc_diff_nd, np.zeros(data_r_after_calc_nd.shape), atol=1.e-5).all())
+# # print("data.r anal vs num matched? - ", np.isclose(data_r_after_calc - data_r_after_calc_nd, np.zeros(data_r_after_calc.shape), atol=1.e-5).all())
+# # print(np.isclose(data_r_after_calc - data_r_after_calc_nd, np.zeros(data_r_after_calc.shape), atol=1.e-5))
+# # print(data_r_after_calc - data_r_after_calc_nd)
+# # print("data_r_after_calc", data_r_after_calc)
+# # print("data_r_after_calc_nd", data_r_after_calc_nd)
+#
+#
+# # print(model_data.Lx - model_data_num_diff.Lx)
+# print(np.isclose(model_data.Lx - model_data_num_diff.Lx, np.zeros(model_data.Lx.shape), atol=1.e-5))
+# print(np.isclose(model_data.Lxx - model_data_num_diff.Lxx, np.zeros(model_data.Lxx.shape), atol=1.e-5))
+# print("Lx matched? - ", np.isclose(model_data.Lx - model_data_num_diff.Lx, np.zeros(model_data.Lx.shape), atol=1.e-5).all())
+# print("Lxx matched? - ", np.isclose(model_data.Lxx - model_data_num_diff.Lxx, np.zeros(model_data.Lxx.shape), atol=1.e-5).all())
+# print("Lu matched? - ", np.isclose(model_data.Lu - model_data_num_diff.Lu, np.zeros(model_data.Lu.shape), atol=1.e-5).all())
+# print("Luu matched? - ", np.isclose(model_data.Luu - model_data_num_diff.Luu, np.zeros(model_data.Luu.shape), atol=1.e-5).all())
+# print("Fx matched? - ", np.isclose(model_data.Fx - model_data_num_diff.Fx, np.zeros(model_data.Fx.shape), atol=1.e-5).all())
+# print("Fu matched? - ", np.isclose(model_data.Fu - model_data_num_diff.Fu, np.zeros(model_data.Fu.shape), atol=1.e-5).all())
+#
+#
 # exit(10)
 
 if diff == 'num':
@@ -136,11 +171,11 @@ for i in range(take_first_n_points - 1):
     running_problems += [action_models_list[i]]
     running_problems += horizon * [action_models_list[i + 1]]
     terminal_problem = action_models_list[i + 1]
-x0 = np.zeros(nq)
+x0 = np.random.randn(nq) / 100  # TODO: initialize base position better (f.e. avg)
 problem = crocoddyl.ShootingProblem(x0, running_problems, terminal_problem)
 # print(len(running_problems))
 # Creating the DDP solver
-ddp = crocoddyl.SolverDDP(problem)
+ddp = crocoddyl.SolverDDP(problem)  # TODO: use Feasible DDP (start from an initial guess, precompute q with IK)
 ddp.setCallbacks([crocoddyl.CallbackVerbose()])
 done = ddp.solve()
 print(f'Converged: {done}')
