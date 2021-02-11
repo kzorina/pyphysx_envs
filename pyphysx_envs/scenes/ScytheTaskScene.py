@@ -1,7 +1,12 @@
+from typing import List
+
+from numpy.linalg import norm
 from pyphysx import *
 # from utils import
 from pyphysx_utils.transformations import multiply_transformations, inverse_transform
 import numpy as np
+import quaternion as npq
+import numba as nb
 
 
 class GrassItem(RigidDynamic):
@@ -11,6 +16,76 @@ class GrassItem(RigidDynamic):
 
 
 import time
+
+
+@nb.njit(fastmath=True)
+def blade_to_grass_dist_opt(x1, x2, y1, min_dist=0.3):
+    """
+    Compute distance between two line segments defined by start and end point and by start point and height (in z).
+    In addition to distance, returns two distances t and s, that measures the distance of the closest point to the
+    start of the line.
+    """
+    l1 = np.linalg.norm(x2 - x1)
+    b = (x2 - x1) / l1
+    e = x1 - y1
+
+    b_squared = np.dot(b, b)
+    d_squared = 1.
+    bd = b[2]  # np.dot(b, d)
+    bd_squared = bd * bd
+    de = e[2]
+    be = np.dot(b, e)
+
+    a = -(b_squared * d_squared - bd_squared)
+    s = (-b_squared * de + be * bd) / a
+    t = (d_squared * be - de * bd) / a
+
+    s = np.minimum(np.maximum(s, 0.), min_dist)
+    t = np.minimum(np.maximum(t, 0.), l1)
+    e_bt_ds = e + b * t  # - d * s
+    e_bt_ds[2] -= s
+    d_squared = np.dot(e_bt_ds, e_bt_ds)
+    return np.sqrt(d_squared), s, t
+
+
+@nb.njit(fastmath=True)
+def cut_grasses(grass_positions, grass_cutted, safe_radius, x1, x2, grass_height, grass_width, max_cut_height, u,
+                x1_inv_matrix, x1_inv_pos, prev_tool_velocity, cutting_velocity):
+    """ Cut grasses if the cutting condition is met. This method will update the grass_cutted array. """
+    x1_x2_dist = norm(x2 - x1)
+    u = u / norm(u)
+    for i in range(grass_cutted.shape[0]):
+        if grass_cutted[i]:
+            continue
+        grass_pos = grass_positions[i]
+        """ First, check if scythe is not far away to safe some computation. """
+        if (norm(x1[:2] - grass_pos[:2]) > safe_radius) and (norm(x2[:2] - grass_pos[:2]) > safe_radius):
+            continue
+        y1 = grass_pos - np.asarray([0., 0., grass_height / 2])  # grass at ground
+        d, s, t = blade_to_grass_dist_opt(x1, x2, y1, min_dist=0.1)
+        t = t / x1_x2_dist
+        scythe_contact_point = x1 + t * (x2 - x1)
+        if scythe_contact_point[2] > max_cut_height or d > grass_width * 4:
+            continue
+
+        scythe_point_z0 = np.array([scythe_contact_point[0], scythe_contact_point[1], 0.])
+        grass_z0 = np.array([y1[0], y1[1], 0.])
+
+        scythe_to_grass = grass_z0 - scythe_point_z0
+        # angle between distance vector from scythe to grass and scythe normal in blade dir
+        v = scythe_to_grass / norm(scythe_to_grass)
+        angle_scythe_dist = np.abs(np.arccos(np.dot(u, v)))
+        if angle_scythe_dist > np.pi / 6:
+            continue
+
+        base_to_point_of_con = x1_inv_matrix @ scythe_contact_point + x1_inv_pos
+
+        # get point of contact velocity
+        point_velocity = prev_tool_velocity[:3] + np.cross(prev_tool_velocity[3:], base_to_point_of_con)
+        scythe_to_grass_vel = np.dot(point_velocity, scythe_to_grass)
+
+        if scythe_to_grass_vel > cutting_velocity:
+            grass_cutted[i] = True
 
 
 class ScytheTaskScene(Scene):
@@ -44,7 +119,7 @@ class ScytheTaskScene(Scene):
         self.demo_importance = scene_demo_importance
 
         self.mat_grass = Material()
-        self.grass_act = []
+        self.grass_act: List[GrassItem] = []
         self.cutted_grass_act = []
         self.grass_pos = []
         self.path_spheres_n = path_spheres_n
@@ -141,30 +216,15 @@ class ScytheTaskScene(Scene):
         for act, pos in zip(self.grass_act, self.grass_pos):
             act.set_global_pose(pos)
 
-    def blade_to_grass_dist(self, x1, x2, y1, min_dist=0.3):
-        b = (x2 - x1) / np.linalg.norm(x2 - x1)
-        d = np.array([0., 0., 1.])
-        e = x1 - y1
-
-        b_squared = np.dot(b, b)
-        d_squared = np.dot(b, b)
-        bd = np.dot(b, d)
-        bd_squared = np.dot(bd, bd)
-        de = np.dot(d, e)
-        be = np.dot(b, e)
-
-        A = -(np.dot(b_squared, d_squared) - bd_squared)
-
-        s = (-np.dot(b_squared, de) + np.dot(be, bd)) / A
-        t = (np.dot(d_squared, be) - np.dot(de, bd)) / A
-        # print(s)
-        # print(t)
-        s = np.clip(s, 0, min_dist)
-        t = np.clip(t, 0, np.linalg.norm(x2 - x1))
-        # print(s)
-        # print(t)
-        d_squared = np.dot(e + b * t - d * s, e + b * t - d * s)
-        return np.sqrt(d_squared), s, t
+    def get_grass_poses_and_mask(self):
+        """ Return the grass positions and the mask that indicates cut grasses """
+        n = len(self.grass_act)
+        positions = np.zeros((n, 3))
+        mask = np.zeros(n, dtype=np.bool)
+        for i, g in enumerate(self.grass_act):
+            positions[i] = g.get_global_pose()[0]
+            mask[i] = g.cutted
+        return positions, mask
 
     def get_environment_rewards(self):
         rewards = {}
@@ -173,59 +233,28 @@ class ScytheTaskScene(Scene):
         tool_base_pose = self.tool.get_global_pose()
         x0_pose = multiply_transformations(tool_base_pose, self.tool.to_x0_blade_transform)
         x1_pose = multiply_transformations(tool_base_pose, self.tool.to_x1_blade_transform)
-        # print(f"items that are still not cutted: {[i for i, grass_i in enumerate(self.grass_act) if not grass_i.cutted]}")
-        for i, grass_item in [(i, grass_i) for i, grass_i in enumerate(self.grass_act) if not grass_i.cutted]:
-            # check if grass is close to blade at all
-            if (np.linalg.norm(x0_pose[0][:2] - grass_item.get_global_pose()[0][:2]) < radius) or (
-                    np.linalg.norm(x1_pose[0][:2] - grass_item.get_global_pose()[0][:2]) < radius):
-                # find closest point
 
-                x1 = x0_pose[0]  # start of the blade in world coord
-                x2 = x1_pose[0]  # end of the blade in world coord
-                y1 = grass_item.get_global_pose()[0] - [0., 0., self.grass_height / 2]  # grass at ground
+        x1 = x0_pose[0]  # start of the blade in world coord
+        x2 = x1_pose[0]  # end of the blade in world coord
+        x1_inv_pose = inverse_transform(x1)
+        x1_inv_matrix = npq.as_rotation_matrix(x1_inv_pose[1])
+        x1_inv_pos = x1_inv_pose[0]
+        x1_x2_dist = np.linalg.norm(x2 - x1)
 
-                d, s, t = self.blade_to_grass_dist(x1, x2, y1, min_dist=0.1)
-                t = t / np.linalg.norm(x2 - x1)
-                if x1[2] + t * (x2[2] - x1[2]) > self.max_cut_height:
-                    break
-                if d < self.grass_width * 4:
+        grass_positions, grass_cutted = self.get_grass_poses_and_mask()
+        u = multiply_transformations(x0_pose, [0., 0., -1])[0] - x0_pose[0]
+        cut_grasses(
+            grass_positions, grass_cutted, safe_radius=radius, x1=x1, x2=x2, grass_height=self.grass_height,
+            grass_width=self.grass_width, max_cut_height=self.max_cut_height, u=u, x1_inv_matrix=x1_inv_matrix,
+            x1_inv_pos=x1_inv_pos, prev_tool_velocity=np.asarray(self.prev_tool_velocity),
+            cutting_velocity=self.threshold_cuting_vel,
+        )
+        for i, g in enumerate(self.grass_act):
+            if not g.cutted and grass_cutted[i]:
+                g.cutted = True
+                self.cutted_grass_act[i].set_global_pose(g.get_global_pose())
+                g.set_global_pose([10 + i * 0.1, -0.5, 0])
 
-                    scythe_point_z0 = np.array([x1[0] + t * (x2[0] - x1[0]), x1[1] + t * (x2[1] - x1[1]), 0])
-                    grass_z0 = [y1[0], y1[1], 0]
-                    scythe_to_grass = grass_z0 - scythe_point_z0
-                    # angle between distance vector from scythe to grass and scythe normal in blade dir
-                    u = multiply_transformations(x0_pose, [0., 0., -1])[0] - x0_pose[0]
-                    v = scythe_to_grass
-                    angle_scythe_dist = abs(np.arccos(np.dot(u, v) / (np.linalg.norm(u) * np.linalg.norm(v))))
-                    print(angle_scythe_dist)
-                    if angle_scythe_dist > np.pi / 6:
-                        break
-
-                    point_of_contact = [x1[0] + t * (x2[0] - x1[0]),
-                                        x1[1] + t * (x2[1] - x1[1]),
-                                        x1[2] + t * (x2[2] - x1[2])]
-                    # from body frame to contact point
-                    base_to_point_of_con = multiply_transformations(inverse_transform(x1), point_of_contact)
-                    # self.grass_act[i].set_global_pose([10 + i * 0.1, -0.5, 0])
-
-                    # get point of contact velocity
-                    point_velocity = self.prev_tool_velocity[:3] + np.cross(self.prev_tool_velocity[3:],
-                                                                            base_to_point_of_con[0])
-                    scythe_to_grass_vel = np.dot(point_velocity, scythe_to_grass)
-                    # time.sleep(5 )
-
-                    if scythe_to_grass_vel > self.threshold_cuting_vel:
-                        print('velocity: ', scythe_to_grass_vel)
-                        self.contact_sphere_act.set_global_pose(point_of_contact)
-                        self.cutted_grass_act[i].set_global_pose(grass_item.get_global_pose())
-                        self.grass_act[i].set_global_pose([10 + i * 0.1, -0.5, 0])
-                        # time.sleep(5)
-                        # print("grass item is cutted")
-                        grass_item.cutted = True
-
-        # for grass in list_grass
-        #     if (height < self.max_cut_height) and (vel > min_cut_vel):
-        #         grass.cutted = True
         rewards['cutted_grass'] = 0.1 * sum([grass.cutted for grass in self.grass_act])
 
         return rewards
