@@ -16,6 +16,7 @@ class ToolEnv(BaseEnv):
     def __init__(self, scene_name='spade', tool_name='spade', show_demo_tool=False,
                  env_params=None, return_rewads=False, use_simulate=True,
                  **kwargs):
+        self.tool_name = tool_name
         self.scene = get_scene(scene_name, **kwargs)
         self.scene.tool = get_tool(tool_name, **kwargs)
         super().__init__(**kwargs)
@@ -64,11 +65,18 @@ class ToolEnv(BaseEnv):
 
     def step(self, action):
         self.iter += 1
+        terminal_reward = False
+
+        if self.tool_name == 'hammer':
+            # print(action[2])
+            self.scene.hammer_speed_z.append(action[2])
         if self.use_simulate:
             for _ in range(self.sub_steps):
                 self.scene.tool.set_linear_velocity(action[:3])
                 self.scene.tool.set_angular_velocity(action[3:])
                 self.scene.simulate(self.rate.period() / self.sub_steps)
+                terminal_reward = terminal_reward or self.scene.get_environment_rewards()['is_terminal']
+
         else:
             # dt = self.rate.period()
             for _ in range(self.sub_steps):
@@ -84,6 +92,7 @@ class ToolEnv(BaseEnv):
         tool_pos, tool_quat = self.scene.tool.get_global_pose()
         rewards = {}
         rewards.update(self.scene.get_environment_rewards())
+        rewards['is_terminal'] = terminal_reward
         if self.demonstration_poses is not None:
             idd = np.clip(np.round(self.scene.simulation_time * self.demonstration_fps), 0,
                           len(self.demonstration_poses) - 1).astype(np.int32)
