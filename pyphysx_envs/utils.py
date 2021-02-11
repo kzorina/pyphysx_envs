@@ -56,8 +56,10 @@ from scipy.spatial.transform import Rotation as R
 from pyphysx_utils.transformations import multiply_transformations, inverse_transform, quat_from_euler
 from rlpyt_utils.utils import exponential_reward
 
-def follow_tool_tip_traj(env, poses, reward_to_track='spheres', add_end_steps=10, verbose=False):
-    env.params['tool_init_position'] = poses[0]
+def follow_tool_tip_traj(env, poses, reward_to_track='spheres', add_end_steps=10, custom_hammer_return=False, verbose=False):
+    # env.params['tool_init_position'] = poses[0]
+    if custom_hammer_return:
+        nail_hammered_id = None
     env.reset()
     action = np.random.normal(size=env._action_space.shape)
     for _ in range(5):
@@ -83,14 +85,20 @@ def follow_tool_tip_traj(env, poses, reward_to_track='spheres', add_end_steps=10
         if verbose:
             print(rewards)
         if 'is_terminal' in rewards and rewards['is_terminal']:
+            if verbose:
+                print('Terminal reward obtained.')
             return 0., 0.
-        total_reward_to_track += (rewards[reward_to_track] - base_reward_to_track) / (len(poses) + add_end_steps)
-        # total_reward_to_track += (rewards[reward_to_track] - base_reward_to_track + rewards['box_displacement'])/ len(poses)
+
 
         rewards['demo_positions'] = exponential_reward(handle_pos - desired_handle_pos, scale=0.5, b=10)
         rewards['demo_orientation'] = exponential_reward([npq.rotation_intrinsic_distance(handle_quat, desired_handle_quat)],
                                                          scale=0.5, b=1)
-
-        traj_follow_reward += (rewards['demo_positions'] + rewards['demo_orientation']) / (len(poses) + add_end_steps)
+        total_reward_to_track += (rewards[reward_to_track] - base_reward_to_track) / (len(poses) + add_end_steps)
+        # total_reward_to_track += (rewards[reward_to_track] - base_reward_to_track + rewards['box_displacement'])/ len(poses)
+        if custom_hammer_return:
+            if rewards[reward_to_track_name] > 0:
+                scale_change = (len(poses) + add_end_steps) / i
+                return scale_change * reward_to_track, scale_change * traj_follow_reward, i
+        # traj_follow_reward += (rewards['demo_positions'] + rewards['demo_orientation']) / (len(poses) + add_end_steps)
 
     return total_reward_to_track, traj_follow_reward

@@ -10,8 +10,8 @@ import time
 
 rewards_to_track = {'spade': 'spheres', 'hammer': 'nail_hammered', 'scythe': 'cutted_grass'}
 # tool_name = 'scythe'
-tool_name = 'hammer'
-# tool_name = 'spade'
+# tool_name = 'hammer'
+tool_name = 'spade'
 video_id = 1
 reward_to_track_name = rewards_to_track[tool_name]
 
@@ -21,8 +21,10 @@ save_alinment_path = f'../data/{tool_name}_alignment_video{video_id}.pkl'
 #### Spade
 # alignment_filename = '/home/kzorina/Work/learning_from_video/data/alignment_res_new/spade/video_1/scale_1/00_params_count_10_smth_0.99_0.05'
 
+alignment_filename = '/home/kzorina/Work/learning_from_video/data/alignment_res_new/spade/video_1/scale_0.75/00_params_count_10_smth_0.87_0.73'
+
 #### Hammer
-alignment_filename = '/home/kzorina/Work/learning_from_video/data/alignment_res_new/hammer/video_1/scale_1/01_params_count_10_smth_1.05_0.05'
+# alignment_filename = '/home/kzorina/Work/learning_from_video/data/alignment_res_new/hammer/video_1/scale_1/01_params_count_10_smth_1.05_0.05'
 # alignment_filename = '/home/kzorina/Work/learning_from_video/data/alignment_res_new/hammer/video_2/scale_1/01_params_count_10_smth_1.06_0.44'
 # alignment_filename = '/home/kzorina/Work/learning_from_video/data/alignment_res_new/hammer/video_3/scale_1/11_params_count_10_smth_1.01_0.94'
 # alignment_filename = '/home/kzorina/Work/learning_from_video/data/alignment_res_new/hammer/video_4/scale_1/18_params_count_10_smth_1.06_0.73'
@@ -62,11 +64,11 @@ env = ToolEnv(scene_name=tool_name, tool_name=tool_name,
               )
 
 
-count = 0
-for i in range(len(poses)):
-# for i in range(0, len(poses), 5):
-    env.scene.path_spheres_act[count].set_global_pose(poses[i])
-    count += 1
+# count = 0
+# for i in range(len(poses)):
+# # for i in range(0, len(poses), 5):
+#     env.scene.path_spheres_act[count].set_global_pose(poses[i])
+#     count += 1
 
 
 def follow_tool_tip_traj(env, poses, reward_to_track_name, tool_name):

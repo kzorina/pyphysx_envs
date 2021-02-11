@@ -1,13 +1,14 @@
 from typing import Optional, List
 from pyphysx import *
 import numpy as np
+from collections import deque
 
 
 class HammerTaskScene(Scene):
 
     def __init__(self, nail_static_friction=10., nail_dynamic_friction=10., nail_restitution=0.,
                  other_static_friction=10., other_dynamic_friction=10., path_spheres_n=0,
-                 nail_dim=((0.1, 0.1, 0.01), (0.01, 0.01, 0.3)),
+                 nail_dim=((0.1, 0.1, 0.01), (0.01, 0.01, 0.3)), account_last_n_steps_speed=5,
                  nail_pose=(0.0, 0.0, 0.1), nail_mass=0.5, scene_demo_importance=1., **kwargs):
         super().__init__(scene_flags=[
             # SceneFlag.ENABLE_STABILIZATION,
@@ -28,6 +29,7 @@ class HammerTaskScene(Scene):
         self.holder_act: Optional[RigidStatic] = None
         self.joint: Optional[D6Joint] = None
         self.tool: Optional[RigidDynamic] = None
+        self.hammer_speed_z = deque(maxlen=account_last_n_steps_speed)
 
     def add_nail_plank(self, nail_pose):
         nail_act = RigidDynamic()
@@ -93,6 +95,10 @@ class HammerTaskScene(Scene):
     def get_nail_z(self, ):
         return self.joint.get_relative_transform()[0][2]
 
+    def get_max_speed_last_steps(self):
+        # print(0 if len(self.hammer_speed_z) == 0 else np.max(self.hammer_speed_z))
+        return 0 if len(self.hammer_speed_z) == 0 else np.min(self.hammer_speed_z)
+
     def _nail_hammer_overlaps(self):
         shapes: List[Shape] = self.tool.get_atached_shapes()
         for s in shapes:
@@ -107,7 +113,7 @@ class HammerTaskScene(Scene):
     def get_environment_rewards(self):
         return {
             'nail_hammered': 1 if self.get_nail_z() < 0.001 else 0,
-            'is_terminal': self._nail_hammer_overlaps()
+            'is_terminal': self._nail_hammer_overlaps() or (self.get_nail_z() < 0.001 and self.get_max_speed_last_steps() > -0.5)
         }
 
     @property

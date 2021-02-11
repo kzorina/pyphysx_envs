@@ -5,14 +5,14 @@ import pickle
 from matplotlib import pyplot as plt
 
 # tool_name = 'spade'
-# tool_name = 'hammer'
-tool_name = 'scythe'
-video_id = 3
+tool_name = 'hammer'
+# tool_name = 'scythe'
+video_id = 1
 
 # align_hammer_1.pkl, q traj q_traj_hammer_1.pkl lead to reward 11. Saving results to file fin_dict_hammer_1.pkl
 
-ddp_q = pickle.load(open('q_traj_hammer_1.pkl', 'rb'))
-alignment_filename = 'align_hammer_1.pkl'
+ddp_q = pickle.load(open('q_traj_hammer_3.pkl', 'rb'))
+alignment_filename = 'align_hammer_3.pkl'
 # ddp_q = pickle.load(open(f'{tool_name}_video_{video_id}_ddp_traj.pkl', 'rb'))
 # alignment_filename = f'../data/{tool_name}_alignment_video{video_id}.pkl'
 demo_params = pickle.load(open(alignment_filename, 'rb'))
