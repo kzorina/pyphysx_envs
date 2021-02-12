@@ -183,7 +183,7 @@ class SpadeTaskScene(Scene):
         return np.sum(inidx)
 
     def get_environment_rewards(self):
-        rewards = {}
+        rewards = {'is_terminal':False}
         if self.add_spheres:
             rewards['spheres'] = self.spheres_reward_weigth * self.get_num_spheres_in_boxes()
             if self.on_spade_reward_weight > 0.:
@@ -218,9 +218,9 @@ class SpadeTaskScene(Scene):
             'sand_buffer_yaw': 0.
         },
             'variable': {
-                'tool_init_position': (0., 0., 1.),
+                'tool_init_position': (0., -0.7, 0.05),
                 'goal_box_position': (0., 1., 0.),
-                'sand_buffer_position': (1., 1., 0.)
+                'sand_buffer_position': (0., 0., 0.)
 
             }
         }

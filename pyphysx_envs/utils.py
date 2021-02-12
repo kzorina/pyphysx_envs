@@ -56,7 +56,9 @@ from scipy.spatial.transform import Rotation as R
 from pyphysx_utils.transformations import multiply_transformations, inverse_transform, quat_from_euler
 from rlpyt_utils.utils import exponential_reward
 
-def follow_tool_tip_traj(env, poses, reward_to_track='spheres', add_end_steps=10, custom_hammer_return=False, verbose=False):
+
+def follow_tool_tip_traj(env, poses, reward_to_track='spheres', add_end_steps=10, custom_hammer_return=False,
+                         verbose=False):
     env.params['tool_init_position'] = poses[0]
     if custom_hammer_return:
         nail_hammered_id = None
@@ -99,10 +101,17 @@ def follow_tool_tip_traj(env, poses, reward_to_track='spheres', add_end_steps=10
         traj_follow_reward += (rewards['demo_positions'] + rewards['demo_orientation']) / (len(poses) + add_end_steps)
         total_reward_to_track += (rewards[reward_to_track] - base_reward_to_track) / (len(poses) + add_end_steps)
         # total_reward_to_track += (rewards[reward_to_track] - base_reward_to_track + rewards['box_displacement'])/ len(poses)
-        if custom_hammer_return:
-            if rewards[reward_to_track] > 0:
-                scale_change = (len(poses) + add_end_steps) / i
+        if reward_to_track == 'nail_hammered' and total_reward_to_track > 0:
+            # print(total_reward_to_track)
+            # print(rewards)
+            # print('at ', i)
+            # print(env.scene.tool.get_global_pose()[0])
+            scale_change = (len(poses) + add_end_steps) / max(i, 1)
+            if custom_hammer_return:
                 return scale_change * total_reward_to_track, scale_change * traj_follow_reward, i
+            else:
+                return scale_change * total_reward_to_track, scale_change * traj_follow_reward
+
     if custom_hammer_return:
         return total_reward_to_track, traj_follow_reward, -1
     else:

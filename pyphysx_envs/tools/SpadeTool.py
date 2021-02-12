@@ -18,6 +18,16 @@ class SpadeTool(RigidDynamic):
         obj: trimesh.Scene = trimesh.load(spade_mesh_path, split_object=True, group_material=False)
         shapes = [self.attach_shape(Shape.create_convex_mesh_from_points(g.vertices, self.mat, scale=scale))
                   for g in obj.geometry.values()]
+        # Add custom coloring to the shapes
+        for i, s in enumerate(self.get_atached_shapes()):
+            if i == 10:
+                s.set_user_data(dict(color='tab:blue'))
+            elif i == 9:
+                s.set_user_data(dict(color='tab:grey'))
+            elif i in [0, 1, 4, 5]:
+                s.set_user_data(dict(color='tab:green'))
+            else:
+                s.set_user_data(dict(color='green'))
         if demo_tool:
             for s in self.get_atached_shapes():  # type: Shape
                 s.set_flag(ShapeFlag.SIMULATION_SHAPE, False)

@@ -6,6 +6,7 @@ from pyphysx_envs.utils import get_tool, get_scene
 import quaternion as npq
 import numpy as np
 from scipy.spatial.transform import Rotation as R
+from pyphysx_envs.utils import params_fill_default
 
 
 class ToolEnv(BaseEnv):
@@ -58,8 +59,10 @@ class ToolEnv(BaseEnv):
 
     def reset(self):
         self.iter = 0
-        self.scene.tool.set_global_pose(self.params['tool_init_position'])
-        self.scene.reset_object_positions(self.params)
+        params = params_fill_default(params_default=self.scene.default_params, params=self.params)
+        self.scene.tool.set_global_pose(
+            self.params['tool_init_position'] if 'tool_init_position' in self.params else [0., 0., 0.])
+        self.scene.reset_object_positions(params)
         self.scene.simulation_time = 0.
         return self.get_obs()
 

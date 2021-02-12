@@ -89,6 +89,9 @@ class HammerTaskScene(Scene):
 
     def reset_object_positions(self, params):
         """ Reset objects positions, s.t. nail is 10cm about nail_position (i.e. not nailed). """
+        for a in self.get_dynamic_rigid_actors():
+            a.set_linear_velocity(np.zeros(3))
+            a.set_angular_velocity(np.zeros(3))
         self.nail_act.set_global_pose(params['nail_position'] + np.array([0., 0., 0.1]))
         self.holder_act.set_global_pose(params['nail_position'])
 
