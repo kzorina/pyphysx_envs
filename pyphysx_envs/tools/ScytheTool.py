@@ -51,8 +51,8 @@ class ScytheTool(RigidDynamic):
                 s.set_flag(ShapeFlag.SIMULATION_SHAPE, False)
                 s.set_user_data({'color': demo_color})
         self.disable_gravity()
-        self.to_x0_blade_transform = ([0., 0., -self.head_width / 2], npq.one)
-        self.to_x1_blade_transform = ([0., + self.head_length, - self.head_width / 2], npq.one)
+        self.to_x0_blade_transform = ([0., self.handle_width / 2, -self.head_width / 2], npq.one)
+        self.to_x1_blade_transform = ([0., self.handle_width / 2 + self.head_length, - self.head_width / 2], npq.one)
 
     @property
     def transform(self):
