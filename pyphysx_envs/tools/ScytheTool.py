@@ -1,6 +1,7 @@
 from pyphysx import *
 import numpy as np
 from pyphysx_utils.urdf_robot_parser import quat_from_euler
+import quaternion as npq
 
 class ScytheTool(RigidDynamic):
     """
@@ -50,16 +51,14 @@ class ScytheTool(RigidDynamic):
                 s.set_flag(ShapeFlag.SIMULATION_SHAPE, False)
                 s.set_user_data({'color': demo_color})
         self.disable_gravity()
-        self.to_x0_blade_transform = ([0., self.handle_width / 2, - self.head_width / 2],
-                                      quat_from_euler("xyz", [0., 0., 0.]))
-        self.to_x1_blade_transform = ([0., self.handle_width / 2 + self.head_length, - self.head_width / 2], quat_from_euler("xyz", [0., 0., 0.]))
+        self.to_x0_blade_transform = ([0., 0., -self.head_width / 2], npq.one)
+        self.to_x1_blade_transform = ([0., + self.head_length, - self.head_width / 2], npq.one)
 
     @property
     def transform(self):
         # return ([0., 0., self.handle_length + self.head_width / 2], quat_from_euler('xyz', [np.deg2rad(0), np.deg2rad(0), np.deg2rad(0)]))
-        return ([0, 0., self.handle_length + self.head_width / 2], quat_from_euler('xyz', [np.deg2rad(0), np.deg2rad(0), np.deg2rad(0)]))
+        return ([0, 0., self.handle_length + self.head_width / 2], npq.one)
 
     @property
     def to_tip_transform(self):
-        return ([0., 0., 0.],
-                quat_from_euler("xyz", [0., 0., 0.]))
+        return ([0., 0., 0.], npq.one)
