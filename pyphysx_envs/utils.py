@@ -2,7 +2,7 @@ import numpy as np
 from pyphysx import *
 from pyphysx_envs.scenes import HammerTaskScene, SpadeTaskScene, ScytheTaskScene
 from pyphysx_envs.tools import HammerTool, SpadeTool, ScytheTool
-from pyphysx_envs.robot import PandaRobot, TalosArmRobot
+from pyphysx_envs.robot import PandaRobot, TalosArmRobot, UR5
 
 
 def params_fill_default(params_default, params=None, add_noise=True):
@@ -43,6 +43,8 @@ def get_robot(robot_name, **kwargs):
         return PandaRobot(**kwargs)
     elif robot_name == 'talos_arm':
         return TalosArmRobot(**kwargs)
+    elif robot_name == 'ur5':
+        return UR5(**kwargs)
     else:
         raise NotImplementedError("Unknown robot '{}'".format(robot_name))
 
