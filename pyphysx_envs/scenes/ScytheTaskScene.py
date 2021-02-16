@@ -50,7 +50,7 @@ def blade_to_grass_dist_opt(x1, x2, y1, min_dist=0.3):
 
 @nb.njit(fastmath=True)
 def cut_grasses(grass_positions, grass_cutted, safe_radius, x1, x2, grass_height, grass_width, max_cut_height, u,
-                x1_inv_matrix, x1_inv_pos, prev_tool_velocity, cutting_velocity):
+                x1_inv_matrix, x1_inv_pos, prev_tool_velocity, cutting_velocity, max_angle):
     """ Cut grasses if the cutting condition is met. This method will update the grass_cutted array. """
     x1_x2_dist = norm(x2 - x1)
     u = u / norm(u)
@@ -75,13 +75,14 @@ def cut_grasses(grass_positions, grass_cutted, safe_radius, x1, x2, grass_height
         # angle between distance vector from scythe to grass and scythe normal in blade dir
         v = scythe_to_grass / norm(scythe_to_grass)
         angle_scythe_dist = np.abs(np.arccos(np.dot(u, v)))
-        if angle_scythe_dist > np.pi / 6:
+        if angle_scythe_dist > max_angle:
             continue
 
-        base_to_point_of_con = x1_inv_matrix @ scythe_contact_point + x1_inv_pos
+        # base_to_point_of_con = x1_inv_matrix @ scythe_contact_point + x1_inv_pos
 
         # get point of contact velocity
-        point_velocity = prev_tool_velocity[:3] + np.cross(prev_tool_velocity[3:], base_to_point_of_con)
+        q_s = scythe_contact_point - x1
+        point_velocity = prev_tool_velocity[:3] + np.cross(prev_tool_velocity[3:], q_s)
         scythe_to_grass_vel = np.dot(point_velocity, scythe_to_grass)
 
         if scythe_to_grass_vel > cutting_velocity:
@@ -213,8 +214,10 @@ class ScytheTaskScene(Scene):
             self.grass_pos = update_grass_pos
         # else:
         #     print(f"WARNING: Poses are not updated due to the old_new ({len(self.grass_pos)}_{len(update_grass_pos)}) len mismach")
-        for act, pos in zip(self.grass_act, self.grass_pos):
+        for act, pos, cut_act in zip(self.grass_act, self.grass_pos, self.cutted_grass_act):
             act.set_global_pose(pos)
+            cut_act.set_global_pose(pos - np.array([100., 100., 100.]))
+            act.cutted = False
 
     def get_grass_poses_and_mask(self):
         """ Return the grass positions and the mask that indicates cut grasses """
@@ -247,7 +250,7 @@ class ScytheTaskScene(Scene):
             grass_positions, grass_cutted, safe_radius=radius, x1=x1, x2=x2, grass_height=self.grass_height,
             grass_width=self.grass_width, max_cut_height=self.max_cut_height, u=u, x1_inv_matrix=x1_inv_matrix,
             x1_inv_pos=x1_inv_pos, prev_tool_velocity=np.asarray(self.prev_tool_velocity),
-            cutting_velocity=self.threshold_cuting_vel,
+            cutting_velocity=self.threshold_cuting_vel, max_angle=np.pi / 6.,
         )
         for i, g in enumerate(self.grass_act):
             if not g.cutted and grass_cutted[i]:
