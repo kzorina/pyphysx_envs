@@ -233,7 +233,6 @@ class RobotEnv(BaseEnv):
             rewards['brake_occured'] = -self.broken_joint_penalty
 
         done_flag = self.iter == self.batch_T or self.joint.is_broken() or ('is_terminal' in rewards and rewards['is_terminal'])
-        return EnvStep(self.get_obs(), rewards,
+        # return EnvStep(self.get_obs(), rewards, done_flag, EnvInfo())  # debug line
+        return EnvStep(self.get_obs(), sum(rewards.values()) / self.horizon,
                        done_flag, EnvInfo())
-        # return EnvStep(self.get_obs(), sum(rewards.values()) / self.horizon,
-        #                done_flag, EnvInfo())
