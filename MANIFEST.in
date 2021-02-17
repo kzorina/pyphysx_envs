@@ -1,0 +1,6 @@
+include pyphysx_envs/robot_data/franka_panda/*
+include pyphysx_envs/robot_data/franka_panda/meshes/collision/*
+include pyphysx_envs/robot_data/franka_panda/meshes/visual/*
+include pyphysx_envs/robot_data/ur_description/*
+include pyphysx_envs/robot_data/ur_description/meshes/collision/*
+include pyphysx_envs/robot_data/ur_description/meshes/visual/*

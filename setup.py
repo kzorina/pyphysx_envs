@@ -15,6 +15,7 @@ setuptools.setup(
     packages=setuptools.find_packages(),
     package_data={'': ['*.txt'],
                   'pyphysx_envs.robot_data': ['*.txt']},
+    data_files=[],
     classifiers=[
         "Programming Language :: Python :: 3",
         "License :: OSI Approved :: MIT License",
