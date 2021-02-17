@@ -6,13 +6,13 @@ import torch
 
 
 class UR5(URDFRobot):
-    def __init__(self, robot_urdf_path, robot_mesh_path, robot_pose=(0., 0.25, 0.5), **kwargs):
+    def __init__(self, robot_urdf_path, robot_mesh_path, robot_pose=(0., 0., 0.), **kwargs):
         super().__init__(urdf_path=robot_urdf_path, mesh_path=robot_mesh_path, kinematic=True)
         self.robot_pose = robot_pose
         self.attach_root_node_to_pose((self.robot_t0[:3, 3], npq.from_rotation_matrix(self.robot_t0[:3, :3])))
         self.disable_gravity()
         self.reset_pose()
-        self.init_q = np.zeros(8)
+        self.init_q = [-1.8, -1.7, 1.8, -1.6, -1.6, 2.]
 
     @property
     def robot_t0(self):
@@ -35,7 +35,7 @@ class UR5(URDFRobot):
 
     @property
     def max_dq_limit(self):
-        return np.array([2, 2.175, 2.175, 2.175, 2.175, 2.61,  2.61, 2.61])
+        return np.array([2.175, 2.175, 2.175, 2.61, 2.61, 2.61])
 
     def set_init_q(self, init_q):
         self.init_q = init_q
@@ -46,7 +46,5 @@ class UR5(URDFRobot):
 
     @property
     def tool_transform(self):
-        return ([0, 0, 0.133],
-                quat_from_euler('xyz', [np.deg2rad(-90), np.deg2rad(0), np.deg2rad(-45)]))
-
-
+        return ([0.03, 0., -0.],
+                quat_from_euler('xyz', [np.deg2rad(-90), np.deg2rad(90), np.deg2rad(0)]))
