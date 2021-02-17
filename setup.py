@@ -26,5 +26,5 @@ setuptools.setup(
                       'pyphysx@git+https://github.com/petrikvladimir/pyphysx.git@master',
                       'rlpyt_utils@git+https://github.com/petrikvladimir/rlpyt_utils.git@master',
                       'torch',
-                      'trimesh', ]
+                      'trimesh', 'pycollada==0.6']
 )
