@@ -13,8 +13,8 @@ setuptools.setup(
     long_description_content_type="text/markdown",
     url="https://github.com/kzorina/pyphysx_envs",
     packages=setuptools.find_packages(),
-    package_data={'':['test.txt'],
-                  'robot_data': ['*.txt']},
+    package_data={'': ['*.txt'],
+                  'pyphysx_envs.robot_data': ['*.txt']},
     classifiers=[
         "Programming Language :: Python :: 3",
         "License :: OSI Approved :: MIT License",
