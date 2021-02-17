@@ -12,7 +12,7 @@ class UR5(URDFRobot):
         self.attach_root_node_to_pose((self.robot_t0[:3, 3], npq.from_rotation_matrix(self.robot_t0[:3, :3])))
         self.disable_gravity()
         self.reset_pose()
-        self.init_q = [-1.8, -1.7, 1.8, -1.6, -1.6, 2.]
+        self.init_q = [0, -1.7, 1.8, -1.6, -1.6, 2.]
 
     @property
     def robot_t0(self):

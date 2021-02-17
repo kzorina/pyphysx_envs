@@ -40,11 +40,17 @@ def get_tool(tool_name, **kwargs):
 
 def get_robot(robot_name, **kwargs):
     if robot_name == 'panda':
-        return PandaRobot(**kwargs)
+        robot_urdf_path = path.join(path.dirname(__file__), 'data/franka_panda/panda_no_hand.urdf')
+        robot_mesh_path = path.join(path.dirname(__file__), 'data/franka_panda')
+        return PandaRobot(robot_urdf_path=robot_urdf_path, robot_mesh_path=robot_mesh_path, **kwargs)
     elif robot_name == 'talos_arm':
-        return TalosArmRobot(**kwargs)
+        robot_urdf_path = path.join(path.dirname(__file__), 'xx')
+        robot_mesh_path = path.join(path.dirname(__file__), 'xx')
+        return TalosArmRobot(robot_urdf_path=robot_urdf_path, robot_mesh_path=robot_mesh_path, **kwargs)
     elif robot_name == 'ur5':
-        return UR5(**kwargs)
+        robot_urdf_path = path.join(path.dirname(__file__), 'data/ur_description/ur5_robot_no_tool.urdf')
+        robot_mesh_path = path.join(path.dirname(__file__), 'data/ur_description')
+        return UR5(robot_urdf_path=robot_urdf_path, robot_mesh_path=robot_mesh_path, **kwargs)
     else:
         raise NotImplementedError("Unknown robot '{}'".format(robot_name))
 
