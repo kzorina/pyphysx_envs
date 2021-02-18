@@ -4,6 +4,6 @@ include pyphysx_envs/robot_data/franka_panda/meshes/visual/*
 include pyphysx_envs/robot_data/ur_description/*
 include pyphysx_envs/robot_data/ur_description/meshes/collision/*
 include pyphysx_envs/robot_data/ur_description/meshes/visual/*
-include pyphysx_envs/robot_data/talos_description/*
-include pyphysx_envs/robot_data/talos_description/meshes/arm/*
-include pyphysx_envs/robot_data/talos_description/meshes/torso/*
+include pyphysx_envs/robot_data/talos_desription/*
+include pyphysx_envs/robot_data/talos_desription/meshes/arm/*
+include pyphysx_envs/robot_data/talos_desription/meshes/torso/*
