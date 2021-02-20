@@ -180,6 +180,7 @@ class RobotEnv(BaseEnv):
 
     def step(self, action):
         self.prev_action = action
+        terminal_reward = False
         self.iter += 1
         for _ in range(self.sub_steps):
             for i, (joint_name, joint) in enumerate(self.robot.movable_joints.items()):
@@ -187,6 +188,7 @@ class RobotEnv(BaseEnv):
                 self.q[joint_name] = joint.commanded_joint_position
             self.robot.update(self.rate.period() / self.sub_steps)
             self.scene.simulate(self.rate.period() / self.sub_steps)
+            terminal_reward = terminal_reward or self.scene.get_environment_rewards()['is_terminal']
         if self.render:
             self.renderer.update(blocking=True)
             # for _ in range(self.sleep_steps * 5):
@@ -201,6 +203,7 @@ class RobotEnv(BaseEnv):
         if self.action_l2_regularization > 0.:
             rewards['action_l2'] = -self.action_l2_regularization * np.linalg.norm(action)
         rewards.update(self.scene.get_environment_rewards())
+        rewards['is_terminal'] = terminal_reward
         if self.demonstration_poses is not None:
             # idd = np.clip(np.round(self.scene.simulation_time * self.demonstration_fps), 0,
             #               len(self.demonstration_poses) - 1).astype(np.int32)
@@ -233,6 +236,8 @@ class RobotEnv(BaseEnv):
             rewards['brake_occured'] = -self.broken_joint_penalty
 
         done_flag = self.iter == self.batch_T or self.joint.is_broken() or ('is_terminal' in rewards and rewards['is_terminal'])
-        # return EnvStep(self.get_obs(), rewards, done_flag, EnvInfo())  # debug line
+        if 'is_terminal' in rewards:
+            rewards.pop('is_terminal')
+            # return EnvStep(self.get_obs(), rewards, done_flag, EnvInfo())  # debug line
         return EnvStep(self.get_obs(), sum(rewards.values()) / self.horizon,
                        done_flag, EnvInfo())
