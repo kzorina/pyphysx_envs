@@ -31,7 +31,7 @@ class ScytheTool(RigidDynamic):
 
         scythe_head = Shape.create_box([self.head_height, self.head_length, self.head_width], self.mat_head)
         scythe_head.set_flag(ShapeFlag.SIMULATION_SHAPE, False)
-        scythe_head.set_local_pose([0., self.head_length / 2 + self.handle_width / 2, 0.])
+        scythe_head.set_local_pose([0., self.head_length / 2 + self.handle_width / 2, self.handle_length -  self.head_width / 2])
         # hammer_head_up = Shape.create_box([head_width, head_cover_width, head_width], self.mat_head)
         # hammer_head_up.set_local_pose([0., head_length / 2 - head_cover_width / 2, 0.])
         # hammer_head_bot = Shape.create_box([head_width, head_cover_width, head_width], self.mat_head)
@@ -42,7 +42,7 @@ class ScytheTool(RigidDynamic):
 
         scythe_handle: Shape = Shape.create_box([self.handle_width, self.handle_width, self.handle_length], self.mat_head)
         scythe_handle.set_flag(ShapeFlag.SIMULATION_SHAPE, False)
-        scythe_handle.set_local_pose([0., 0., - self.handle_length / 2 + self.handle_width / 2])
+        scythe_handle.set_local_pose([0., 0., self.handle_length / 2])
         self.attach_shape(scythe_handle)
         self.set_global_pose([0.0, 0.0, 0.5])
         self.set_mass(mass)
@@ -56,9 +56,10 @@ class ScytheTool(RigidDynamic):
 
     @property
     def transform(self):
-        # return ([0., 0., self.handle_length + self.head_width / 2], quat_from_euler('xyz', [np.deg2rad(0), np.deg2rad(0), np.deg2rad(0)]))
-        return ([0, 0., self.handle_length + self.head_width / 2], npq.one)
+        # return ([0., 0., self.handle_length - self.head_width / 2], quat_from_euler('xyz', [np.deg2rad(0), np.deg2rad(), np.deg2rad(0)]))
+        return ([0, 0., 0], quat_from_euler('xyz', [np.deg2rad(0), np.deg2rad(90), np.deg2rad(0)]))
+        # return ([0, 0., 0.], npq.one)
 
     @property
     def to_tip_transform(self):
-        return ([0., 0., 0.], npq.one)
+        return ([0., 0., self.handle_length - self.head_width / 2], npq.one)

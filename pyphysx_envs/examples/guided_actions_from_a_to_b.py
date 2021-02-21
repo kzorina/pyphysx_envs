@@ -13,8 +13,8 @@ sleep_sec = 0.01
 # end_tool_pose = (np.array([1.8, 1, 0.05]), quat_from_euler("xyz", [0., 1.5707963, 0.]))
 # start_tool_pose = (np.array([0.8, 1, 0.05]), quat_from_euler("xyz", [0., 1.5707963, 0.]))
 
-start_tool_pose = (np.array([1.8, 1.2, 0.05]), quat_from_euler("xyz", [0., 1.5707963, 1.]))
-end_tool_pose = (np.array([0.8, 1.2, 0.05]), quat_from_euler("xyz", [0., 1.5707963, 1.]))
+start_tool_pose = (np.array([1.8, 0.5, 0.05]), quat_from_euler("xyz", [0., 1.5707963, 1.]))
+end_tool_pose = (np.array([0.8, 0.5, 0.05]), quat_from_euler("xyz", [0., 1.5707963, 1.]))
 
 steps = 400
 

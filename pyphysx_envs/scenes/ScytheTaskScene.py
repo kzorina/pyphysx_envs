@@ -230,10 +230,10 @@ class ScytheTaskScene(Scene):
         return positions, mask
 
     def get_environment_rewards(self):
-        rewards = {}
+        rewards = {'is_terminal': False}
         # iterate over all non-cutted grass
         radius = self.grass_width + self.tool.head_length / 2
-        tool_base_pose = self.tool.get_global_pose()
+        tool_base_pose = multiply_transformations(self.tool.get_global_pose(), self.tool.to_tip_transform)
         x0_pose = multiply_transformations(tool_base_pose, self.tool.to_x0_blade_transform)
         x1_pose = multiply_transformations(tool_base_pose, self.tool.to_x1_blade_transform)
 

@@ -5,7 +5,7 @@ from pyphysx_utils.urdf_robot_parser import quat_from_euler
 import torch
 
 class PandaRobot(URDFRobot):
-    def __init__(self, robot_urdf_path, robot_mesh_path, robot_pose=(0., -0.25, -0.2), **kwargs):
+    def __init__(self, robot_urdf_path, robot_mesh_path, robot_pose=((0., -0.25, -0.2),), **kwargs):
         super().__init__(urdf_path=robot_urdf_path, mesh_path=robot_mesh_path, kinematic=True)
         self.robot_pose = robot_pose
         self.attach_root_node_to_pose((self.robot_t0[:3, 3], npq.from_rotation_matrix(self.robot_t0[:3, :3])))
@@ -16,7 +16,9 @@ class PandaRobot(URDFRobot):
     @property
     def robot_t0(self):
         robot_t0 = torch.eye(4)
-        robot_t0[:3, 3] = torch.tensor(self.robot_pose).float()
+        robot_t0[:3, 3] = torch.tensor(self.robot_pose[0]).float()
+        if len(self.robot_pose) > 1:
+            robot_t0[:3, :3] = torch.tensor(npq.as_rotation_matrix(self.robot_pose[1]))
         return robot_t0
 
     @property

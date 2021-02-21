@@ -40,8 +40,8 @@ def get_tool(tool_name, **kwargs):
 
 def get_robot(robot_name, **kwargs):
     if robot_name == 'panda':
-        robot_urdf_path = path.join(path.dirname(__file__), 'robot_data/franka_panda/panda_no_hand.urdf')
-        robot_mesh_path = path.join(path.dirname(__file__), 'robot_data/franka_panda')
+        robot_urdf_path = path.join(path.dirname(__file__), 'robot_data/panda_description/panda_no_hand.urdf')
+        robot_mesh_path = path.join(path.dirname(__file__), 'robot_data/panda_description')
         return PandaRobot(robot_urdf_path=robot_urdf_path, robot_mesh_path=robot_mesh_path, **kwargs)
     elif robot_name == 'talos_arm':
         robot_urdf_path = path.join(path.dirname(__file__), 'robot_data/talos_desription/talos_body_left_arm.urdf')
