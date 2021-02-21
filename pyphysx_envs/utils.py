@@ -109,7 +109,7 @@ def follow_tool_tip_traj(env, poses, reward_to_track='spheres', add_end_steps=10
         traj_follow_reward += (rewards['demo_positions'] + rewards['demo_orientation']) / (len(poses) + add_end_steps)
         total_reward_to_track += (rewards[reward_to_track] - base_reward_to_track) / (len(poses) + add_end_steps)
         # total_reward_to_track += (rewards[reward_to_track] - base_reward_to_track + rewards['box_displacement'])/ len(poses)
-        if reward_to_track == 'nail_hammered' and total_reward_to_track > 0:
+        if (reward_to_track == 'nail_hammered' or reward_to_track == 'cutted_grass') and total_reward_to_track > 0:
             # print(total_reward_to_track)
             # print(rewards)
             # print('at ', i)
