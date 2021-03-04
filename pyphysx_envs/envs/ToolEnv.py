@@ -113,8 +113,11 @@ class ToolEnv(BaseEnv):
             # for _ in range(self.sleep_steps):
             #     self.rate.sleep()
 
-        done_flag = self.iter == self.batch_T or ('is_terminal' in rewards and rewards['is_terminal'])
+        done_flag = self.iter == self.batch_T or ('is_terminal' in rewards and rewards['is_terminal']) or ('is_done' in rewards and rewards['is_done'])
+
         if self.return_rewads:
             return EnvStep(self.get_obs(), sum(rewards.values()) / self.horizon, done_flag, EnvInfo()), rewards
         else:
+            if 'is_terminal' in rewards:
+                rewards.pop('is_terminal')
             return EnvStep(self.get_obs(), sum(rewards.values()) / self.horizon, done_flag, EnvInfo())

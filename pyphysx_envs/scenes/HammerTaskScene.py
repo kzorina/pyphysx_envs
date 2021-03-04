@@ -34,10 +34,13 @@ class HammerTaskScene(Scene):
     def add_nail_plank(self, nail_pose):
         nail_act = RigidDynamic()
         nail_act.attach_shape(Shape.create_box(self.nail_dim[0], self.mat_nail))  # head of nail
-        nail_head_tip: Shape = Shape.create_box((1.2 * self.nail_dim[0][0], 1.2 * self.nail_dim[0][1], 0.4 * self.nail_dim[0][2]), self.mat_nail)
+        nail_head_tip: Shape = Shape.create_box((1.4 * self.nail_dim[0][0],
+                                                 1.4 * self.nail_dim[0][1],
+                                                 0.2 * self.nail_dim[0][2]),
+                                                self.mat_nail) # untohable part of the head of the nail
         nail_head_tip.set_flag(ShapeFlag.SIMULATION_SHAPE, False)
         nail_head_tip.set_user_data({'color': 'tab:gray', 'name': 'nail_head'})
-        tip: Shape = Shape.create_box((0.6 * self.nail_dim[1][0], 0.6 * self.nail_dim[1][1], self.nail_dim[1][2]),
+        tip: Shape = Shape.create_box((self.nail_dim[1][0], self.nail_dim[1][1], self.nail_dim[1][2]),
                                       self.mat_nail)
         tip.set_local_pose([0., 0., -(self.nail_dim[0][2] / 2 + self.nail_dim[1][2] / 2)])
         nail_act.attach_shape(tip)
@@ -50,11 +53,11 @@ class HammerTaskScene(Scene):
         holder = RigidStatic()
         b: Shape = Shape.create_box([0.1, 0.1, 0.3], self.mat)
         b.set_user_data({'color': [0.0, 1., 0., 0.5]})
-        b.set_local_pose([0., 0.05 + self.nail_dim[0][2] / 2, -0.15 - self.nail_dim[0][2]])
+        b.set_local_pose([0., 0.05 + self.nail_dim[1][1] / 2, -0.15 - self.nail_dim[0][2]])
         holder.attach_shape(b)
         b: Shape = Shape.create_box([0.1, 0.1, 0.3], self.mat)
         b.set_user_data({'color': [0.0, 1., 0., 0.5]})
-        b.set_local_pose([0., -0.05 - self.nail_dim[0][2] / 2, -0.15 - self.nail_dim[0][2]])
+        b.set_local_pose([0., -0.05 - self.nail_dim[1][1] / 2, -0.15 - self.nail_dim[0][2]])
         holder.attach_shape(b)
         holder.set_global_pose(nail_pose)
         self.add_actor(holder)
@@ -116,7 +119,9 @@ class HammerTaskScene(Scene):
     def get_environment_rewards(self):
         return {
             'nail_hammered': 1 if self.get_nail_z() < 0.001 else 0,
-            'is_terminal': self._nail_hammer_overlaps() or (self.get_nail_z() < 0.001 and self.get_max_speed_last_steps() > -0.5)
+            'is_terminal': self._nail_hammer_overlaps(),
+            # 'is_terminal': self._nail_hammer_overlaps() or (self.get_nail_z() < 0.001 and self.get_max_speed_last_steps() > -0.5),
+            # 'is_done': 1 if self.get_nail_z() < 0.001 else 0,
         }
 
     @property

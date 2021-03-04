@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="pyphysx_envs",
-    version="0.3",
+    version="0.4",
     author="Kateryna Zorina",
     author_email="zorina.kateryna.mail@gmail.com",
     description="Package contains a set of environments created with pyphysx library.",

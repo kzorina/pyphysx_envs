@@ -22,7 +22,7 @@ class RobotEnv(BaseEnv):
     def __init__(self, scene_name='spade', tool_name='spade', robot_name='panda', show_demo_tool=False,
                  dq_limit_percentage=0.9, additional_objects=None, obs_add_q=False, obs_add_action=False,
                  velocity_violation_penalty=1., action_l2_regularization=0., broken_joint_penalty=0.,
-                 increase_velocity_penalty_factor=0., increase_velocity_start_itr=0,
+                 increase_velocity_penalty_factor=0., increase_velocity_start_itr=0, use_simulate=True,
                  **kwargs):
         self.increase_velocity_penalty_factor = increase_velocity_penalty_factor
         self.increase_velocity_start_itr = increase_velocity_start_itr
@@ -32,6 +32,9 @@ class RobotEnv(BaseEnv):
         self.show_demo_tool = show_demo_tool
         self.obs_add_q = obs_add_q
         self.obs_add_action = obs_add_action
+        self.use_simulate = True
+        self.tool_name = tool_name
+        # self.use_simulate = use_simulate
 
         self.scene = get_scene(scene_name, **kwargs)
         self.scene.tool = get_tool(tool_name, **kwargs)
@@ -124,7 +127,10 @@ class RobotEnv(BaseEnv):
 
     def create_tool_joint(self):
         self.joint = D6Joint(self.robot.last_link, self.scene.tool, local_pose0=self.tool_transform)
-        self.joint.set_break_force(5000, 5000)
+        if self.tool_name == 'hammer':
+            self.joint.set_break_force(20000, 20000)
+        else:
+            self.joint.set_break_force(5000, 5000)
 
     def get_obs(self, return_space=False):
         scene_obs = self.scene.get_obs()
@@ -182,13 +188,32 @@ class RobotEnv(BaseEnv):
         self.prev_action = action
         terminal_reward = False
         self.iter += 1
-        for _ in range(self.sub_steps):
-            for i, (joint_name, joint) in enumerate(self.robot.movable_joints.items()):
-                joint.set_joint_velocity(action[i])
-                self.q[joint_name] = joint.commanded_joint_position
-            self.robot.update(self.rate.period() / self.sub_steps)
-            self.scene.simulate(self.rate.period() / self.sub_steps)
-            terminal_reward = terminal_reward or self.scene.get_environment_rewards()['is_terminal']
+        if self.use_simulate:
+            for _ in range(self.sub_steps):
+
+                tool_pos, tool_quat = self.scene.tool.get_global_pose()
+                for i, (joint_name, joint) in enumerate(self.robot.movable_joints.items()):
+                    joint.set_joint_velocity(action[i])
+                    self.q[joint_name] = joint.commanded_joint_position
+
+                self.robot.update(self.rate.period() / self.sub_steps)
+                self.scene.simulate(self.rate.period() / self.sub_steps)
+                next_tool_pos, next_tool_quat = self.scene.tool.get_global_pose()
+                tool_velocity = [*(next_tool_pos - tool_pos), ]
+                # self.scene.prev_tool_velocity = tool_velocity
+                terminal_reward = terminal_reward or self.scene.get_environment_rewards()['is_terminal']
+                if self.tool_name == 'scythe':
+                    rewards = {}
+                    rewards.update(self.scene.get_environment_rewards())
+                    self.scene.prev_tool_velocity[:3] = (next_tool_pos - tool_pos) / (self.rate.period() / self.sub_steps)
+                    self.scene.prev_tool_velocity[3:] = npq.as_rotation_vector(next_tool_quat * tool_quat ** (-1)) / (
+                                self.rate.period() / self.sub_steps)
+                # print("velocity", self.scene.prev_tool_velocity)
+            # print("stupid")
+        else:
+            raise ValueError("non-simulate not implemented")
+
+
         if self.render:
             self.renderer.update(blocking=True)
             # for _ in range(self.sleep_steps * 5):
@@ -230,12 +255,13 @@ class RobotEnv(BaseEnv):
                                                              b=10)
 
         # print(self.q)
-        # print(rewards)
+
         # print(sum(rewards.values()))
         if self.joint.is_broken():
             rewards['brake_occured'] = -self.broken_joint_penalty
 
         done_flag = self.iter == self.batch_T or self.joint.is_broken() or ('is_terminal' in rewards and rewards['is_terminal'])
+        # print(rewards)
         if 'is_terminal' in rewards:
             rewards.pop('is_terminal')
             # return EnvStep(self.get_obs(), rewards, done_flag, EnvInfo())  # debug line
