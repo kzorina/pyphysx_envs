@@ -11,7 +11,7 @@ from pyphysx_utils.transformations import multiply_transformations, inverse_tran
 from pyphysx_render.utils import gl_color_from_matplotlib
 from pyphysx_envs.utils import params_fill_default
 from pyphysx_render.meshcat_render import MeshcatViewer
-
+import pickle
 
 class RobotEnv(BaseEnv):
     """
@@ -23,7 +23,7 @@ class RobotEnv(BaseEnv):
                  dq_limit_percentage=0.9, additional_objects=None, obs_add_q=False, obs_add_action=False,
                  velocity_violation_penalty=1., action_l2_regularization=0., broken_joint_penalty=0.,
                  increase_velocity_penalty_factor=0., increase_velocity_start_itr=0, use_simulate=True,
-                 **kwargs):
+                 store_q=False, **kwargs):
         self.increase_velocity_penalty_factor = increase_velocity_penalty_factor
         self.increase_velocity_start_itr = increase_velocity_start_itr
         self.broken_joint_penalty = broken_joint_penalty
@@ -35,6 +35,9 @@ class RobotEnv(BaseEnv):
         self.use_simulate = True
         self.tool_name = tool_name
         # self.use_simulate = use_simulate
+        self.store_q = store_q
+        if self.store_q:
+            self.q_values = []
 
         self.scene = get_scene(scene_name, **kwargs)
         self.scene.tool = get_tool(tool_name, **kwargs)
@@ -195,7 +198,9 @@ class RobotEnv(BaseEnv):
                 for i, (joint_name, joint) in enumerate(self.robot.movable_joints.items()):
                     joint.set_joint_velocity(action[i])
                     self.q[joint_name] = joint.commanded_joint_position
-
+                if self.store_q:
+                    self.q_values.append(np.array(
+                        [joint.commanded_joint_position for (joint_name, joint) in self.robot.movable_joints.items()]))
                 self.robot.update(self.rate.period() / self.sub_steps)
                 self.scene.simulate(self.rate.period() / self.sub_steps)
                 next_tool_pos, next_tool_quat = self.scene.tool.get_global_pose()
@@ -262,6 +267,9 @@ class RobotEnv(BaseEnv):
 
         done_flag = self.iter == self.batch_T or self.joint.is_broken() or ('is_terminal' in rewards and rewards['is_terminal'])
         # print(rewards)
+        if self.store_q:
+            pickle.dump(self.q_values, open(
+                '/home/kzorina/Work/learning_from_video/data/alignment/save_from_04_03_21/panda/saved_q.pkl', 'wb'))
         if 'is_terminal' in rewards:
             rewards.pop('is_terminal')
             # return EnvStep(self.get_obs(), rewards, done_flag, EnvInfo())  # debug line
