@@ -213,6 +213,9 @@ class RobotEnv(BaseEnv):
                     self.scene.prev_tool_velocity[:3] = (next_tool_pos - tool_pos) / (self.rate.period() / self.sub_steps)
                     self.scene.prev_tool_velocity[3:] = npq.as_rotation_vector(next_tool_quat * tool_quat ** (-1)) / (
                                 self.rate.period() / self.sub_steps)
+                if self.tool_name == 'hammer':
+                    # print(action[2])
+                    self.scene.hammer_speed_z.append((next_tool_pos - tool_pos) / (self.rate.period() / self.sub_steps)[2])
                 # print("velocity", self.scene.prev_tool_velocity)
             # print("stupid")
         else:
