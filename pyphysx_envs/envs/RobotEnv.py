@@ -268,7 +268,9 @@ class RobotEnv(BaseEnv):
         if self.joint.is_broken():
             rewards['brake_occured'] = -self.broken_joint_penalty
 
-        done_flag = self.iter == self.batch_T or self.joint.is_broken() or ('is_terminal' in rewards and rewards['is_terminal'])
+        done_flag = self.iter == self.batch_T or self.joint.is_broken() or (
+                'is_terminal' in rewards and rewards['is_terminal']) or (
+                'is_done' in rewards and rewards['is_done'])
         # print(rewards)
         if self.store_q:
             pickle.dump(self.q_values, open(
