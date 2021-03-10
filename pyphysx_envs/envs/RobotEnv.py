@@ -215,7 +215,7 @@ class RobotEnv(BaseEnv):
                                 self.rate.period() / self.sub_steps)
                 if self.tool_name == 'hammer':
                     # print(action[2])
-                    self.scene.hammer_speed_z.append((next_tool_pos - tool_pos) / (self.rate.period() / self.sub_steps)[2])
+                    self.scene.hammer_speed_z.append((next_tool_pos[2] - tool_pos[2]) / (self.rate.period() / self.sub_steps))
                 # print("velocity", self.scene.prev_tool_velocity)
             # print("stupid")
         else:

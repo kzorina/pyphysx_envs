@@ -8,7 +8,7 @@ class HammerTaskScene(Scene):
 
     def __init__(self, nail_static_friction=10., nail_dynamic_friction=10., nail_restitution=0.,
                  other_static_friction=10., other_dynamic_friction=10., path_spheres_n=0,
-                 nail_dim=((0.1, 0.1, 0.01), (0.01, 0.01, 0.3)), account_last_n_steps_speed=5,
+                 nail_dim=((0.1, 0.1, 0.01), (0.01, 0.01, 0.3)), account_last_n_steps_speed=3,
                  nail_pose=(0.0, 0.0, 0.1), nail_mass=0.5, scene_demo_importance=1., **kwargs):
         super().__init__(scene_flags=[
             # SceneFlag.ENABLE_STABILIZATION,
@@ -120,7 +120,7 @@ class HammerTaskScene(Scene):
         return {
             'nail_hammered': 1 if self.get_nail_z() < 0.001 else 0,
             # 'is_terminal': self._nail_hammer_overlaps(),
-            'is_terminal': self._nail_hammer_overlaps() or (self.get_nail_z() < 0.001 and self.get_max_speed_last_steps() > -0.5),
+            'is_terminal': self._nail_hammer_overlaps() or (self.get_nail_z() < 0.001 and self.get_max_speed_last_steps() > -0.1),
             # 'is_done': 1 if self.get_nail_z() < 0.001 else 0,
         }
 
