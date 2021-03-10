@@ -118,7 +118,7 @@ class HammerTaskScene(Scene):
 
     def get_environment_rewards(self):
         return {
-            'nail_hammered': 1 if self.get_nail_z() < 0.001 else 0,
+            'nail_hammered': 10 if self.get_nail_z() < 0.001 else 0,
             # 'is_terminal': self._nail_hammer_overlaps(),
             'is_terminal': self._nail_hammer_overlaps() or (self.get_nail_z() < 0.001 and self.get_max_speed_last_steps() > -0.1),
             'is_done': 1 if self.get_nail_z() < 0.001 else 0,
