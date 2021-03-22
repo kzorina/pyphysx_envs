@@ -69,7 +69,7 @@ class SpadeTaskScene(Scene):
             self.sand_box_act = create_actor_box(
                 ([0., 0., 0.05],
                  quat_from_euler("xyz", [0., 0., self.params['sand_buffer_yaw']])),
-                length_x=self.sand_deposit_length,
+                length_x=self.sand_deposit_length, height=0.07,
                 length_y=self.sand_deposit_length, add_front_wall=False,
                 mass=5.
             )
@@ -132,9 +132,9 @@ class SpadeTaskScene(Scene):
         self.goal_box_act.set_angular_velocity(np.zeros(3))
 
         if self.add_spheres:
-            self.sand_box_act.set_global_pose(
-                ([params['sand_buffer_position'][0], params['sand_buffer_position'][1], 0.],
-                 quat_from_euler("xyz", [0., 0., params['sand_buffer_yaw']])))
+            self.sand_box_pose = ([params['sand_buffer_position'][0], params['sand_buffer_position'][1], 0.],
+                 quat_from_euler("xyz", [0., 0., params['sand_buffer_yaw']]))
+            self.sand_box_act.set_global_pose(self.sand_box_pose)
             self.sand_box_act.set_linear_velocity(np.zeros(3))
             self.sand_box_act.set_angular_velocity(np.zeros(3))
             # reset sphere pos

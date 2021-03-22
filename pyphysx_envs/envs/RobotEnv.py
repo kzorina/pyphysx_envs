@@ -132,6 +132,8 @@ class RobotEnv(BaseEnv):
         self.joint = D6Joint(self.robot.last_link, self.scene.tool, local_pose0=self.tool_transform)
         if self.tool_name == 'hammer':
             self.joint.set_break_force(20000, 20000)
+        elif self.tool_name == 'spade':
+            self.joint.set_break_force(10000, 10000)
         else:
             self.joint.set_break_force(5000, 5000)
 
@@ -266,12 +268,13 @@ class RobotEnv(BaseEnv):
 
         # print(sum(rewards.values()))
         if self.joint.is_broken():
+            rewards['is_terminal'] = True
             rewards['brake_occured'] = -self.broken_joint_penalty
 
         done_flag = self.iter == self.batch_T or self.joint.is_broken() or (
                 'is_terminal' in rewards and rewards['is_terminal']) or (
                 'is_done' in rewards and rewards['is_done'])
-        # print(rewards)
+        print(rewards)
         if self.store_q:
             pickle.dump(self.q_values, open(
                 '/home/kzorina/Work/learning_from_video/data/alignment/save_from_04_03_21/panda/saved_q.pkl', 'wb'))
