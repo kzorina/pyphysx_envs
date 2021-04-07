@@ -30,6 +30,7 @@ class ScytheTool(RigidDynamic):
         self.handle_length = self.head_length * handle_blade_ratio
 
         scythe_head = Shape.create_box([self.head_height, self.head_length, self.head_width], self.mat_head)
+        scythe_head.set_user_data(dict(color='tab:grey'))
         scythe_head.set_flag(ShapeFlag.SIMULATION_SHAPE, False)
         scythe_head.set_local_pose([0., self.head_length / 2 + self.handle_width / 2, self.handle_length -  self.head_width / 2])
         # hammer_head_up = Shape.create_box([head_width, head_cover_width, head_width], self.mat_head)
@@ -41,6 +42,7 @@ class ScytheTool(RigidDynamic):
         # self.attach_shape(hammer_head_bot)
 
         scythe_handle: Shape = Shape.create_box([self.handle_width, self.handle_width, self.handle_length], self.mat_head)
+        scythe_handle.set_user_data(dict(color='tab:brown'))
         scythe_handle.set_flag(ShapeFlag.SIMULATION_SHAPE, False)
         scythe_handle.set_local_pose([0., 0., self.handle_length / 2])
         self.attach_shape(scythe_handle)

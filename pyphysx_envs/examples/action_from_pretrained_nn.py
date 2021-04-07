@@ -5,19 +5,30 @@ import numpy as np
 from os import path
 import pickle
 from matplotlib import pyplot as plt
+from pyphysx_utils.urdf_robot_parser import quat_from_euler
 
-pretrain_n_steps = 10000
+# pretrain_n_steps = 10000
+pretrain_n_steps = 6000
 # pretrain_n_steps = 4000
 use_previous_pretrain = True
 # use_previous_pretrain = False
 
-tool_name = 'hammer'
+robot_name = 'talos_arm_right'
+tool_name = 'spade'
 video_id = 1
-ddp_q = pickle.load(open(f'{tool_name}_video_{video_id}_ddp_traj.pkl', 'rb'))
-alignment_filename = f'../data/{tool_name}_alignment_video{video_id}.pkl'
-demo_params = pickle.load(open(alignment_filename, 'rb'))
+# scale = 1.0
+optimize_base_rotation = True
+optimize_z_robot_base = True
 
-data_to_pretrain = pickle.load(open(f"pretrain_robot_network_{tool_name}_{video_id}.pkl", "rb"))
+folder = "/home/kzorina/Work/learning_from_video/data/alignment/save_from_04_03_21/"
+alignment_path = f'{robot_name}/align_{tool_name}_{video_id}.pkl'
+q_traj_path = f'{robot_name}/q_traj_{tool_name}_{video_id}.pkl'
+data_to_pretrain_path = f"{robot_name}/pretrain_robot_network_{tool_name}_{video_id}.pkl"
+save_pretrained_model_path = path.join(folder, f"{robot_name}/pretrained_mu_{robot_name}_{tool_name}_{video_id}.pkl")
+
+ddp_q = pickle.load(open(path.join(folder, q_traj_path), 'rb'))
+demo_params = pickle.load(open(path.join(folder, alignment_path), 'rb'))
+data_to_pretrain = pickle.load(open(path.join(folder, data_to_pretrain_path), "rb"))
 x_train = data_to_pretrain['x']
 y_train = data_to_pretrain['y'][:len(x_train)]
 
@@ -56,45 +67,56 @@ if not use_previous_pretrain:
     print("achieved loss for {} len q, at {} steps: {}".format(len(x_train), pretrain_n_steps, loss))
     print(len(loss_values))
     plt.plot(loss_values)
-    torch.save(model.state_dict(), f"pretrained_mu_{tool_name}_{video_id}_400_300_{pretrain_n_steps}steps.pkl")
+    plt.show()
+    torch.save(model.state_dict(), save_pretrained_model_path)
 
-model.load_state_dict(torch.load(f"pretrained_mu_{tool_name}_{video_id}_400_300_{pretrain_n_steps}steps.pkl"))
+model.load_state_dict(torch.load(save_pretrained_model_path))
+# model.load_state_dict(
+#     torch.load(f"pretrained_mu_{robot_name}_{tool_name}_{video_id}_400_300_{pretrain_n_steps}steps.pkl"))
 print("Loaded pretrained model")
 
-
-real_points = len(demo_params['tip_poses'])
-print(real_points)
-real_fps = 24
-actual_time = real_points * (1 / real_fps)
-q_steps = 10 + 1
-base_opt_steps = 10
-dt = 0.01
-init_ids = []
-ids_to_take = [base_opt_steps - 2 + i * q_steps for i in range(real_points)] + [-1]
-q_trajectory = ddp_q[ids_to_take]
-pickle.dump(q_trajectory, open(f"../data/{tool_name}/video{video_id}_q_trajectory.pkl", "wb"))
-q_trajectory_sampled = np.array([x[2:] for x in q_trajectory])
 x_base, y_base = ddp_q[-1][:2]
+base_n = 3 if optimize_base_rotation else 2
+base_rot = ddp_q[-1][2] if optimize_base_rotation else 0
+q_trajectory_sampled = np.array([x[base_n:] for x in ddp_q])
+print(q_trajectory_sampled[0])
+print(ddp_q[0])
 
-env = RobotEnv(scene_name=tool_name, tool_name=tool_name, robot_name='panda',
-               rate=24,  # demonstration_poses=demo_params['tip_poses'],
-               show_demo_tool=True,
-               render=True,
-               obs_add_q=True,
-               nail_dim=((0.05, 0.05, 0.01), (0.01, 0.01, 0.2)),
-               path_spheres_n=len(demo_params['tip_poses']),
-               add_spheres=True,
-               demonstration_q=q_trajectory_sampled,
-               spade_mesh_path=path.join(path.dirname(path.dirname(__file__)), 'data/spade_mesh.obj'),
-               robot_pose=(x_base, y_base, 0.),
-               robot_urdf_path=path.join(path.dirname(path.dirname(__file__)), 'data/franka_panda/panda_no_hand.urdf'),
-               robot_mesh_path=path.join(path.dirname(path.dirname(__file__)), 'data/franka_panda'),
-               params=demo_params,  # render_dict=dict(viewport_size=(2000, 1500)),
+robot_z_pose = -0.2 if robot_name == 'panda' and tool_name == 'spade' else 0.3 if robot_name == 'talos_arm' else 0
+if optimize_z_robot_base:
+    q_trajectory_sampled = np.array([x[base_n + 1:] for x in ddp_q])
+    base_rot = ddp_q[-1][3] if optimize_base_rotation else 0
+    robot_z_pose = ddp_q[-1][2]
+
+env = RobotEnv(scene_name=tool_name, tool_name=tool_name, robot_name=robot_name,
+                   rate=24,  # demonstration_poses=demo_params['tip_poses'],
+                   # show_demo_tool=True,
+                   grass_patch_n=2,
+                   threshold_cuting_vel=0.02,
+                   use_simulate=False if tool_name == 'scythe' else True,
+                   obs_add_q=True,
+                   render=True,
+                   nail_dim=((0.05, 0.05, 0.02), (0.01, 0.01, 0.2)),
+                   path_spheres_n=len(demo_params['tip_poses']),
+                   add_spheres=True,
+                   demonstration_q=q_trajectory_sampled,
+                   spade_mesh_path=path.join(path.dirname(path.dirname(__file__)), 'data/spade_mesh.obj'),
+                   robot_pose=((x_base, y_base, robot_z_pose),
+                               quat_from_euler('xyz', [0., 0., base_rot])),
+                   # robot_urdf_path=robot_urdf_path,
+                   # robot_mesh_path=robot_mesh_path,
+                   params=demo_params,  # render_dict=dict(viewport_size=(2000, 1500)),
                render_dict=dict(
                    use_meshcat=True, open_meshcat=True, wait_for_open=True, render_to_animation=True, animation_fps=24,
                ),
-               sphere_static_friction=1,
-               sphere_dynamic_friction=1,
+                # sphere_static_friction=1,
+                # sphere_dynamic_friction=1,
+                velocity_violation_penalty=0.0001,
+                # dq_limit_percentage=0.9,
+                increase_velocity_penalty_factor=0.01,
+                increase_velocity_start_itr=100,
+                action_l2_regularization=1.e-5,
+                broken_joint_penalty=1,
                )
 env.robot.set_init_q(q_trajectory_sampled[0])
 env.reset()
@@ -111,6 +133,7 @@ print(f"q trajectory: {q_trajectory_sampled[0]}, \n real q data {np.asarray(list
 print(f"len of q traj = {len(q_trajectory_sampled)}")
 rewards = []
 spade_pose_list = []
+print(len(torch.tensor(env.get_obs())))
 for i in range(len(q_trajectory_sampled) - 1):
     action = model(torch.tensor(env.get_obs()))
     # q_vel = (q_trajectory_sampled[i + 1][2:] - np.asarray(list(env.q.values()))) * calculated_rate
@@ -118,8 +141,9 @@ for i in range(len(q_trajectory_sampled) - 1):
     rewards.append(r)
     spade_pose_list.append(env.scene.tool.get_global_pose()[0])
     # env.renderer.update(blocking=True)
-for i in range(5):
-    o, r, d, info = env.step(action.detach().numpy())
+if not d:
+    for i in range(5):
+        o, r, d, info = env.step(action.detach().numpy())
 plt.plot(spade_pose_list, marker='x')
 plt.plot([x[0] for x in demo_params['tip_poses']])
 plt.show()

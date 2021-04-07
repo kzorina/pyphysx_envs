@@ -407,6 +407,21 @@
     <child link="wrist_right_ft_link"/>
     <origin rpy="0.0 0 -1.57079632679" xyz="0 0 -0.051"/>
   </joint>
+  <!--  <joint name="talos_spade_joint" type="fixed">-->
+  <joint name="talos_spade_joint" type="revolute">
+      <parent link="wrist_right_ft_link" />
+      <child link="tool_link" />
+      <origin rpy="1.57079632679 0 -3.14" xyz="0 0 -0.05" />
+<!--      <origin rpy="1.57079632679 0 -1.57079632679" xyz="0 0 -0.05" />-->
+<!--    IF REVOLUTE    -->
+      <axis xyz="0 0 1"/>
+      <limit effort="30" velocity="1.0" lower="-6.14" upper="6.14" />
+
+  </joint>
+
+    <link name="tool_link">
+  </link>
+
   <!--***********************-->
   <!--       FT TOOL         -->
   <!--***********************-->

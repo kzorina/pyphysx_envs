@@ -35,16 +35,19 @@ class TalosArmRobot(URDFRobot):
 
     @property
     def last_link(self):
-        return self.links['wrist_left_ft_link'].actor
+        return self.links['tool_link'].actor
 
     @property
     def max_dq_limit(self):
-        return np.array([2.175, 2.175, 2.175, 2.175, 2.175, 2.175, 2.175, 2.61, 2.61])
+        return np.array([2.175, 2.175, 2.175, 2.175, 2.175, 2.175, 2.175, 2.61, 2.61, 2.61])
+        # return np.array([2.175, 2.175, 2.175, 2.175, 2.175, 2.175, 2.175, 2.61, 2.61])
 
     def set_init_q(self, init_q):
         self.init_q = init_q
 
     @property
     def tool_transform(self):
-        return ([0., 0., -0.05],
-                quat_from_euler('xyz', [np.deg2rad(90), np.deg2rad(0), np.deg2rad(-90)]))
+        return ([0., 0., 0.],
+                quat_from_euler('xyz', [np.deg2rad(0), np.deg2rad(0), np.deg2rad(0)]))
+        # return ([0., 0., -0.05],
+        #         quat_from_euler('xyz', [np.deg2rad(90), np.deg2rad(0), np.deg2rad(-90)]))
