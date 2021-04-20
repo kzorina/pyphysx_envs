@@ -6,7 +6,7 @@ import torch
 
 
 class TalosArmRobot(URDFRobot):
-    def __init__(self, robot_urdf_path, robot_mesh_path, robot_pose=((0., 0.25, 0.5), ), **kwargs):
+    def __init__(self, robot_urdf_path, robot_mesh_path, robot_pose=((0., 0.25, 0.5),), init_q=None, **kwargs):
         super().__init__(urdf_path=robot_urdf_path, mesh_path=robot_mesh_path, kinematic=True)
         self.robot_pose = robot_pose
         self.attach_root_node_to_pose((self.robot_t0[:3, 3], npq.from_rotation_matrix(self.robot_t0[:3, :3])))
@@ -14,7 +14,7 @@ class TalosArmRobot(URDFRobot):
         self.reset_pose()
         # self.movable_joints_name = ['torso_1_joint'] + ['arm_left_{}_joint'.format(i) for i in range(1, 8)]
         # self.movable_joints = {k: v for k, v in self.movable_joints.items() if k in self.movable_joints_name}
-        self.init_q = np.array([0., 0., -0.0302, -1.0526, 0.6388, -1.3987, 1.2125, 0.7082, 2.0445])
+        self.init_q = np.array([0., 0., -0.0302, -1.0526, 0.6388, -1.3987, 1.2125, 0.7082, 2.0445, 0]) if init_q is None else init_q
 
     @property
     def robot_t0(self):

@@ -33,7 +33,7 @@ class SpadeTaskScene(Scene):
                  plane_static_friction=0.1, plane_dynamic_friction=0.1, plane_restitution=0.,
                  sphere_static_friction=5., sphere_dynamic_friction=5., scene_demo_importance=1.,
                  spheres_reward_weigth=0.1, on_spade_reward_weight=0., out_of_box_sphere_reward=False,
-                 negative_box_motion_reward=None, path_spheres_n=0, spade_default_params=None, **kwargs
+                 negative_box_motion_reward=None, negative_sand_box_motion_reward=None, path_spheres_n=0, spade_default_params=None, **kwargs
                  ):
         super().__init__(scene_flags=[
             # SceneFlag.ENABLE_STABILIZATION,
@@ -56,6 +56,7 @@ class SpadeTaskScene(Scene):
         self.on_spade_reward_weight = on_spade_reward_weight
         self.out_of_box_sphere_reward = out_of_box_sphere_reward
         self.negative_box_motion_reward = negative_box_motion_reward
+        self.negative_sand_box_motion_reward = negative_sand_box_motion_reward
         self.path_spheres_n = path_spheres_n
 
     def scene_setup(self):
@@ -199,6 +200,13 @@ class SpadeTaskScene(Scene):
             rewards['box_displacement'] = -(1 - exponential_reward(self.goal_box_pose -
                                                                    self.goal_box_act.get_global_pose()[0], scale=1,
                                                                    b=10))
+        if self.negative_sand_box_motion_reward:
+            # rewards['box_displacement'] = -5 * (0.5 - max(0.5,
+            #                                               np.linalg.norm(self.goal_box_pose -
+            #                                                              self.goal_box_act.get_global_pose()[0])))
+            rewards['sand_box_displacement'] = -(1 - exponential_reward(self.sand_box_pose[0] -
+                                                                   self.sand_box_act.get_global_pose()[0], scale=1,
+                                                                   b=1))
         dist = np.linalg.norm(self.goal_box_pose - self.goal_box_act.get_global_pose()[0])
         if dist > 0.05:
             rewards['is_terminal'] = True

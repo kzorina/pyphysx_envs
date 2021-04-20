@@ -4,21 +4,21 @@ from os import path
 import time
 
 sleep_sec = 0
-tool_name = 'scythe'
+tool_name = 'spade'
 # env = ToolEnv(scene_name=tool_name, tool_name=tool_name, render=True, add_spheres=True,
 #               spade_mesh_path=path.join(path.dirname(path.dirname(__file__)), 'data/spade_mesh.obj'),
 #               render_dict=dict(use_meshcat=True, open_meshcat=True, wait_for_open=True, #render_to_animation=True,
 #                                animation_fps=24, )
 #               )
 
-env = RobotEnv(scene_name=tool_name, tool_name=tool_name, robot_name='panda',
+env = RobotEnv(scene_name=tool_name, tool_name=tool_name, robot_name='talos_arm_right',
                render=True,
                add_spheres=True,
                spade_mesh_path=path.join(path.dirname(path.dirname(__file__)), 'data/spade_mesh.obj'),
-               robot_pose=((0., -0.25, -0.2),),
+               robot_pose=((0., 0., 0.),),
                render_dict=dict(
                    use_meshcat=True, open_meshcat=True, wait_for_open=True,
-                   show_frames=True,
+                   # show_frames=True,
                    # render_to_animation=True, animation_fps=24,
                )
                # robot_urdf_path=path.join(path.dirname(path.dirname(__file__)), 'data/franka_panda/panda_no_hand.urdf'),
@@ -26,6 +26,7 @@ env = RobotEnv(scene_name=tool_name, tool_name=tool_name, robot_name='panda',
                )
 i = 0
 action = np.random.normal(size=env._action_space.shape)
+print(len(action))
 env.step(action)
 # while env.renderer.is_active:
 while True:
