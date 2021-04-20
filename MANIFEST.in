@@ -13,5 +13,6 @@ include pyphysx_envs/robot_data/talos_desription/talos_data/meshes/gripper/*
 include pyphysx_envs/robot_data/talos_desription/talos_data/meshes/head/*
 include pyphysx_envs/robot_data/talos_desription/talos_data/meshes/sensors/orbbec/orbbec.STL
 include pyphysx_envs/robot_data/talos_desription/talos_data/meshes/torso/*
+include pyphysx_envs/robot_data/talos_desription/talos_data/meshes/v2/*
 include pyphysx_envs/robot_data/talos_desription/talos_data/robots/*
 include pyphysx_envs/robot_data/talos_desription/talos_data/srdf/*
