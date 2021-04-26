@@ -204,9 +204,9 @@ class SpadeTaskScene(Scene):
             # rewards['box_displacement'] = -5 * (0.5 - max(0.5,
             #                                               np.linalg.norm(self.goal_box_pose -
             #                                                              self.goal_box_act.get_global_pose()[0])))
-            rewards['sand_box_displacement'] = -(1 - exponential_reward(self.sand_box_pose[0] -
+            rewards['sand_box_displacement'] = - 5 * (1 - exponential_reward(self.sand_box_pose[0] -
                                                                    self.sand_box_act.get_global_pose()[0], scale=1,
-                                                                   b=1))
+                                                                   b=10))
         dist = np.linalg.norm(self.goal_box_pose - self.goal_box_act.get_global_pose()[0])
         if dist > 0.05:
             rewards['is_terminal'] = True

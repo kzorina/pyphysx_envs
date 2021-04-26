@@ -87,6 +87,7 @@ class RobotEnv(BaseEnv):
         self.q = {}
         if self.demonstration_q is not None:
             self.robot.init_q = self.demonstration_q[0]
+        print(self.robot.get_joint_names())
         for i, name in enumerate(self.robot.get_joint_names()):
             self.q[name] = 0.
         self.dq_limit = dq_limit_percentage * self.robot.max_dq_limit
@@ -133,7 +134,7 @@ class RobotEnv(BaseEnv):
         if self.tool_name == 'hammer':
             self.joint.set_break_force(20000, 20000)
         elif self.tool_name == 'spade':
-            self.joint.set_break_force(10000, 10000)
+            self.joint.set_break_force(300, 300)
         else:
             self.joint.set_break_force(5000, 5000)
 
@@ -272,9 +273,14 @@ class RobotEnv(BaseEnv):
             rewards['brake_occured'] = -self.broken_joint_penalty
 
         done_flag = self.iter == self.batch_T or self.joint.is_broken() or (
-                'is_terminal' in rewards and rewards['is_terminal']) or (
+                # 'is_terminal' in rewards and rewards['is_terminal']) or (
                 'is_done' in rewards and rewards['is_done'])
-        # print(rewards)
+        # done_flag = self.iter == self.batch_T or self.joint.is_broken() or (
+        #         'is_terminal' in rewards and rewards['is_terminal']) or (
+        #         'is_done' in rewards and rewards['is_done'])
+        print(rewards)
+        # TODO: REMOVE THIS
+        rewards = {'main':rewards['spheres']}
         if self.store_q:
             pickle.dump(self.q_values, open(
                 '/home/kzorina/Work/learning_from_video/data/alignment/save_from_04_03_21/panda/saved_q.pkl', 'wb'))
