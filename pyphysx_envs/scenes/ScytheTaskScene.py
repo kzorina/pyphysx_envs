@@ -7,6 +7,7 @@ from pyphysx_utils.transformations import multiply_transformations, inverse_tran
 import numpy as np
 import quaternion as npq
 import numba as nb
+from rlpyt_utils.utils import exponential_reward
 
 
 class GrassItem(RigidDynamic):
@@ -94,7 +95,7 @@ class ScytheTaskScene(Scene):
     def __init__(self, grass_patch_n=1, dict_grass_patch_locations=None, dict_grass_patch_yaws=None, grass_per_patch=10,
                  grass_patch_len=0.4, grass_patch_width=0.1, grass_height=0.3, grass_width=0.005,
                  path_spheres_n=0, threshold_cuting_vel=0.0000002, scene_demo_importance=1.,
-                 max_cut_height=0.1, min_cut_vel=0.1, **kwargs):
+                 max_cut_height=0.1, min_cut_vel=0.1, add_dense_reward=False, add_manual_shaped_reward=False, **kwargs):
         super().__init__(scene_flags=[
             # SceneFlag.ENABLE_STABILIZATION,
             SceneFlag.ENABLE_FRICTION_EVERY_ITERATION,
@@ -127,6 +128,8 @@ class ScytheTaskScene(Scene):
         self.threshold_cuting_vel = threshold_cuting_vel
         self.prev_tool_pose = None
         self.prev_tool_velocity = np.zeros(6)
+        self.add_dense_reward = add_dense_reward
+        self.add_manual_shaped_reward = add_manual_shaped_reward
 
     def rotate_around_center(self, center=(0., 0.), point=(0., 0.), angle=0.):
         x_new = (point[0] - center[0]) * np.cos(angle) - (point[1] - center[1]) * np.sin(angle) + center[0]
@@ -207,6 +210,8 @@ class ScytheTaskScene(Scene):
         update_grass_pos = []
         for i in range(self.grass_patch_n):
             if f'grass_patch_location_{i}' in params:
+                self.grass_patch_locations[i] = (
+                    params[f'grass_patch_location_{i}'][0], params[f'grass_patch_location_{i}'][1], 0)
                 update_grass_pos += self.generate_grass_poses(params[f'grass_patch_location_{i}'],
                                                               params[
                                                                   f'grass_patch_yaw_{i}'] if f'grass_patch_yaw_{i}' in params else 0)
@@ -258,8 +263,23 @@ class ScytheTaskScene(Scene):
                 self.cutted_grass_act[i].set_global_pose(g.get_global_pose())
                 g.set_global_pose([10 + i * 0.1, -0.5, 0])
 
-        rewards['cutted_grass'] = 0.1 * sum([grass.cutted for grass in self.grass_act])
-
+        rewards['cutted_grass'] = 1 * sum([grass.cutted for grass in self.grass_act])
+        # print(self.tool.get_global_pose())
+        if self.add_dense_reward:
+            rewards['dense_reward'] = 0
+            tool_pose = multiply_transformations(self.tool.get_global_pose(), self.tool.to_tip_transform)
+            for i in range(self.grass_patch_n):
+                rewards['dense_reward'] += 1 * (1/self.grass_patch_n) * exponential_reward(tool_pose[0] - self.grass_patch_locations[i], scale=1, b=10)
+        if self.add_manual_shaped_reward:
+            rewards['z-coord_less_min'] = 0.2 * (min(0, x2[2]))
+            rewards['z-coord_more_max'] = 0.2 * (self.max_cut_height - max(self.max_cut_height, x2[2]))
+            # to incentive having xy-plane higher veolity
+            rewards['velocity_high_in_xy_plane'] = 0.01 * (
+                np.linalg.norm(np.asarray(self.prev_tool_velocity)[:3] * [1, 1, 0]))
+            y_rotation = abs(npq.as_euler_angles(tool_base_pose[1])[1])
+            z_rotation = abs(npq.as_euler_angles(tool_base_pose[1])[2])
+            rewards['tool_rot_y'] = 0.1 * min(1.57079633 - y_rotation, y_rotation - 1.57079633)
+            rewards['tool_rot_z'] = 0.1 * min(-z_rotation, z_rotation)
         return rewards
 
     @property

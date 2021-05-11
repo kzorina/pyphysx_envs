@@ -30,6 +30,8 @@ class HammerTaskScene(Scene):
         self.joint: Optional[D6Joint] = None
         self.tool: Optional[RigidDynamic] = None
         self.hammer_speed_z = deque(maxlen=account_last_n_steps_speed)
+        self.steps_since_solved = 0
+        self.nail_overlaped = False
 
     def add_nail_plank(self, nail_pose):
         nail_act = RigidDynamic()
@@ -97,6 +99,8 @@ class HammerTaskScene(Scene):
             a.set_angular_velocity(np.zeros(3))
         self.nail_act.set_global_pose(params['nail_position'] + np.array([0., 0., 0.1]))
         self.holder_act.set_global_pose(params['nail_position'])
+        self.steps_since_solved = 0
+        self.nail_overlaped = False
 
     def get_nail_z(self, ):
         return self.joint.get_relative_transform()[0][2]
@@ -117,11 +121,16 @@ class HammerTaskScene(Scene):
         return False
 
     def get_environment_rewards(self):
+        self.nail_overlaped = self.nail_overlaped or self._nail_hammer_overlaps()
         return {
-            'nail_hammered': 10 if self.get_nail_z() < 0.001 else 0,
+            'nail_hammered': 1 if self.get_nail_z() < 0.001 else 0,
+            'overlaping_penalty': -0.2 * self.nail_overlaped,
+            'low_speed_penalty': -0.1 * (self.steps_since_solved > 0 and self.steps_since_solved < 10 and self.get_max_speed_last_steps() > -0.1),
             # 'is_terminal': self._nail_hammer_overlaps(),
-            'is_terminal': self._nail_hammer_overlaps() or (self.get_nail_z() < 0.001 and self.get_max_speed_last_steps() > -0.1),
-            'is_done': 1 if self.get_nail_z() < 0.001 else 0,
+            'is_terminal': False,
+            # 'is_terminal': self._nail_hammer_overlaps() or (self.get_nail_z() < 0.001 and self.get_max_speed_last_steps() > -0.1),
+            'is_done': False,
+            # 'is_done': 1 if self.get_nail_z() < 0.001 else 0,
         }
 
     @property

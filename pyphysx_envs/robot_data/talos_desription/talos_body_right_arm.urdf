@@ -419,9 +419,32 @@
 
   </joint>
 
-    <link name="tool_link">
+  <link name="tool_link">
   </link>
+  <joint name="panda_spade_joint" type="fixed">
+        <parent link="tool_link" />
+        <child link="panda_holder" />
+        <origin rpy="1.57079632679 0 0" xyz="0.0 0.01 0." />
+    </joint>
+    <link name="panda_holder">
+        <visual>
+            <geometry>
+                <cylinder length="0.03" radius="0.04"/>
+            </geometry>
+            <material name="LightGrey">
+    		    <color rgba="0.7 0.7 0.7 1.0"/>
+  		    </material>
+        </visual>
+        <collision>
+            <geometry>
+                <cylinder length="0.0003" radius="0.04"/>
+            </geometry>
+<!--            <material name="panda_white">-->
+<!--    		    <color rgba="1. 1. 1. 1."/>-->
+<!--  		    </material>-->
+        </collision>
 
+    </link>
   <!--***********************-->
   <!--       FT TOOL         -->
   <!--***********************-->

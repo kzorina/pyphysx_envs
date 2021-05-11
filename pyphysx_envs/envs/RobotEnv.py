@@ -1,7 +1,8 @@
 from pyphysx_envs.envs.BaseEnv import BaseEnv
 from rlpyt.spaces.float_box import FloatBox
 from rlpyt_utils.utils import exponential_reward
-from rlpyt.envs.base import EnvInfo, Env, EnvStep
+# from rlpyt.envs.base import EnvInfo, Env, EnvStep
+from rlpyt.envs.base import Env, EnvStep
 from pyphysx_envs.utils import get_tool, get_scene, get_robot
 import quaternion as npq
 import numpy as np
@@ -12,6 +13,10 @@ from pyphysx_render.utils import gl_color_from_matplotlib
 from pyphysx_envs.utils import params_fill_default
 from pyphysx_render.meshcat_render import MeshcatViewer
 import pickle
+from collections import namedtuple
+
+EnvInfo = namedtuple("EnvInfo", [])
+# EnvInfo = namedtuple("EnvInfo", ['velocity_violation_penalty'])
 
 class RobotEnv(BaseEnv):
     """
@@ -65,7 +70,7 @@ class RobotEnv(BaseEnv):
                 self.demo_tool_list.append(demo_tool)
 
         super().__init__(**kwargs)
-
+        self.joint_break_force = 0
         self.scene.scene_setup()
         self.scene.add_aggregate(self.robot.get_aggregate())
 
@@ -87,7 +92,7 @@ class RobotEnv(BaseEnv):
         self.q = {}
         if self.demonstration_q is not None:
             self.robot.init_q = self.demonstration_q[0]
-        print(self.robot.get_joint_names())
+        # print(self.robot.get_joint_names())
         for i, name in enumerate(self.robot.get_joint_names()):
             self.q[name] = 0.
         self.dq_limit = dq_limit_percentage * self.robot.max_dq_limit
@@ -133,10 +138,13 @@ class RobotEnv(BaseEnv):
         self.joint = D6Joint(self.robot.last_link, self.scene.tool, local_pose0=self.tool_transform)
         if self.tool_name == 'hammer':
             self.joint.set_break_force(20000, 20000)
+            self.joint_break_force = 20000
         elif self.tool_name == 'spade':
-            self.joint.set_break_force(300, 300)
+            self.joint.set_break_force(2000, 2000)
+            self.joint_break_force = 50
         else:
             self.joint.set_break_force(5000, 5000)
+            self.joint_break_force = 5000
 
     def get_obs(self, return_space=False):
         scene_obs = self.scene.get_obs()
@@ -218,6 +226,12 @@ class RobotEnv(BaseEnv):
                                 self.rate.period() / self.sub_steps)
                 if self.tool_name == 'hammer':
                     # print(action[2])
+                    rewards = {}
+                    rewards.update(self.scene.get_environment_rewards())
+                    if rewards['nail_hammered']:
+                        self.scene.steps_since_solved += 1
+                    # if self.scene.steps_since_solved > 0:
+                    #     print('self.scene.steps_since_solved', self.scene.steps_since_solved)
                     self.scene.hammer_speed_z.append((next_tool_pos[2] - tool_pos[2]) / (self.rate.period() / self.sub_steps))
                 # print("velocity", self.scene.prev_tool_velocity)
             # print("stupid")
@@ -271,16 +285,13 @@ class RobotEnv(BaseEnv):
         if self.joint.is_broken():
             rewards['is_terminal'] = True
             rewards['brake_occured'] = -self.broken_joint_penalty
+        # rewards['joint_penalty'] = self.velocity_violation_penalty * (self.joint_break_force - max(self.joint_break_force,
+        #                                                                  max(self.joint.get_force_torque()[0])))
 
         done_flag = self.iter == self.batch_T or self.joint.is_broken() or (
-                # 'is_terminal' in rewards and rewards['is_terminal']) or (
+                'is_terminal' in rewards and rewards['is_terminal']) or (
                 'is_done' in rewards and rewards['is_done'])
-        # done_flag = self.iter == self.batch_T or self.joint.is_broken() or (
-        #         'is_terminal' in rewards and rewards['is_terminal']) or (
-        #         'is_done' in rewards and rewards['is_done'])
-        print(rewards)
-        # TODO: REMOVE THIS
-        rewards = {'main':rewards['spheres']}
+        # print(rewards)
         if self.store_q:
             pickle.dump(self.q_values, open(
                 '/home/kzorina/Work/learning_from_video/data/alignment/save_from_04_03_21/panda/saved_q.pkl', 'wb'))
@@ -289,3 +300,4 @@ class RobotEnv(BaseEnv):
             # return EnvStep(self.get_obs(), rewards, done_flag, EnvInfo())  # debug line
         return EnvStep(self.get_obs(), sum(rewards.values()) / self.horizon,
                        done_flag, EnvInfo())
+                       # done_flag, EnvInfo(velocity_violation_penalty=self.velocity_violation_penalty))

@@ -166,5 +166,28 @@
         <axis xyz="0 0 1" />
         <limit effort="12" lower="-2.9671" upper="2.9671" velocity="2.8710" />
     </joint>
+    <joint name="panda_spade_joint" type="fixed">
+        <parent link="panda_link7" />
+        <child link="panda_holder" />
+        <origin rpy="0 0 0" xyz="0 0 0.1" />
+    </joint>
+    <link name="panda_holder">
+        <visual>
+            <geometry>
+                <cylinder length="0.03" radius="0.04"/>
+            </geometry>
+            <material name="panda_white">
+    		    <color rgba="1. 1. 1. 1."/>
+  		    </material>
+        </visual>
+        <collision>
+            <geometry>
+                <cylinder length="0.003" radius="0.04"/>
+            </geometry>
+<!--            <material name="panda_white">-->
+<!--    		    <color rgba="1. 1. 1. 1."/>-->
+<!--  		    </material>-->
+        </collision>
 
+    </link>
 </robot>

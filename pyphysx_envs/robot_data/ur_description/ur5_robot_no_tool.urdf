@@ -206,6 +206,30 @@
       <origin rpy="0 0 0" xyz="-0.01 0 0"/>
     </collision>
   </link>
+  <joint name="panda_spade_joint" type="fixed">
+        <parent link="ee_link" />
+        <child link="panda_holder" />
+        <origin rpy="0 1.57079632679 0" xyz="0.01 0. 0" />
+    </joint>
+    <link name="panda_holder">
+        <visual>
+            <geometry>
+                <cylinder length="0.03" radius="0.04"/>
+            </geometry>
+            <material name="LightGrey">
+    		    <color rgba="0.7 0.7 0.7 1.0"/>
+  		    </material>
+        </visual>
+        <collision>
+            <geometry>
+                <cylinder length="0.003" radius="0.04"/>
+            </geometry>
+<!--            <material name="panda_white">-->
+<!--    		    <color rgba="1. 1. 1. 1."/>-->
+<!--  		    </material>-->
+        </collision>
+
+    </link>
 
 </robot>
 
