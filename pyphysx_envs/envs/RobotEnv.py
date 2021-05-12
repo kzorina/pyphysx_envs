@@ -252,7 +252,7 @@ class RobotEnv(BaseEnv):
                                      np.linalg.norm(np.minimum(0., action + self.dq_limit))
         if self.action_l2_regularization > 0.:
             rewards['action_l2'] = -self.action_l2_regularization * np.linalg.norm(action)
-        rewards.update(self.scene.get_environment_rewards())
+        rewards.update(self.scene.get_environment_rewards(velocity_scale=self.velocity_violation_penalty))
         rewards['is_terminal'] = terminal_reward
         if self.demonstration_poses is not None:
             # idd = np.clip(np.round(self.scene.simulation_time * self.demonstration_fps), 0,
