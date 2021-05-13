@@ -124,8 +124,8 @@ class HammerTaskScene(Scene):
         self.nail_overlaped = self.nail_overlaped or self._nail_hammer_overlaps()
         return {
             'nail_hammered': 1 if self.get_nail_z() < 0.001 else 0,
-            'overlaping_penalty': -0.2 * self.nail_overlaped,
-            # 'overlaping_penalty': -1 * velocity_scale * self.nail_overlaped,
+            # 'overlaping_penalty': -0.2 * self.nail_overlaped,
+            'overlaping_penalty': -0.5 * velocity_scale * self.nail_overlaped,
             'low_speed_penalty': -0.1 * (self.steps_since_solved > 0 and self.steps_since_solved < 10 and self.get_max_speed_last_steps() > -0.1),
             # 'is_terminal': self._nail_hammer_overlaps(),
             'is_terminal': False,
