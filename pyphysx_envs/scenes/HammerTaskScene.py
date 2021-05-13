@@ -35,13 +35,15 @@ class HammerTaskScene(Scene):
 
     def add_nail_plank(self, nail_pose):
         nail_act = RigidDynamic()
-        nail_act.attach_shape(Shape.create_box(self.nail_dim[0], self.mat_nail))  # head of nail
+        touchable_nail_head = Shape.create_box(self.nail_dim[0], self.mat_nail)
+        touchable_nail_head.set_user_data({'color': 'tab:gray', 'name': 'nail_head'})
+        nail_act.attach_shape(touchable_nail_head)  # head of nail
         nail_head_tip: Shape = Shape.create_box((1.4 * self.nail_dim[0][0],
                                                  1.4 * self.nail_dim[0][1],
                                                  0.2 * self.nail_dim[0][2]),
                                                 self.mat_nail) # untohable part of the head of the nail
         nail_head_tip.set_flag(ShapeFlag.SIMULATION_SHAPE, False)
-        nail_head_tip.set_user_data({'color': 'tab:gray', 'name': 'nail_head'})
+        nail_head_tip.set_user_data({'color': 'tab:gray', 'name': 'nail_head_safety'})
         tip: Shape = Shape.create_box((self.nail_dim[1][0], self.nail_dim[1][1], self.nail_dim[1][2]),
                                       self.mat_nail)
         tip.set_local_pose([0., 0., -(self.nail_dim[0][2] / 2 + self.nail_dim[1][2] / 2)])
@@ -115,6 +117,9 @@ class HammerTaskScene(Scene):
             ud = s.get_user_data()
             if ud is not None and 'name' in ud and ud['name'] == 'hammer_head':
                 for ns in self.nail_act.get_atached_shapes():
+                    nud = ns.get_user_data()
+                    if nud is not None and 'name' in nud and nud['name'] == 'nail_head':
+                        continue
                     if s.overlaps(ns, self.tool.get_global_pose(), self.nail_act.get_global_pose()):
                         return True
                 return False
