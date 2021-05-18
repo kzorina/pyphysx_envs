@@ -68,6 +68,8 @@ class ToolEnv(BaseEnv):
 
     def step(self, action):
         self.iter += 1
+        if self.iter == 10 and self.tool_name == 'scythe':
+            self.scene.stage = 1
         terminal_reward = False
         action = np.clip(action, -10., 10.)
         if self.tool_name == 'hammer':

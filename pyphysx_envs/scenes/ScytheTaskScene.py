@@ -8,6 +8,7 @@ import numpy as np
 import quaternion as npq
 import numba as nb
 from rlpyt_utils.utils import exponential_reward
+from pyphysx_utils.urdf_robot_parser import quat_from_euler
 
 
 class GrassItem(RigidDynamic):
@@ -111,6 +112,20 @@ class ScytheTaskScene(Scene):
             self.grass_patch_yaws = [1 * i for i in range(self.grass_patch_n)]
         else:
             self.grass_patch_yaws = [value for key, value in dict_grass_patch_yaws.items()]
+        self.dense_reward_location_first = []
+        self.dense_reward_location_second = []
+        self.dense_reward_rotation = []
+        if add_manual_shaped_reward:
+            for loc, yaw in zip(self.grass_patch_locations, self.grass_patch_yaws):
+                # print('loc', loc)
+                # print('yaw', yaw)
+                self.dense_reward_location_first.append(self.rotate_around_center(loc,
+                                                                (loc[0] + 0.8 * grass_patch_len, loc[1] + 0), yaw))
+                self.dense_reward_location_second.append(self.rotate_around_center(loc,
+                                                                (loc[0] + -0.8 * grass_patch_len, loc[1] + 0), yaw))
+                # print(self.dense_reward_location_first)
+                self.dense_reward_rotation.append(
+                    quat_from_euler('xyz', [np.deg2rad(0), np.deg2rad(90), np.deg2rad(yaw)]))
         self.grass_per_patch = grass_per_patch
         self.grass_patch_len = grass_patch_len
         self.grass_patch_width = grass_patch_width
@@ -130,10 +145,11 @@ class ScytheTaskScene(Scene):
         self.prev_tool_velocity = np.zeros(6)
         self.add_dense_reward = add_dense_reward
         self.add_manual_shaped_reward = add_manual_shaped_reward
+        self.stage = 0
 
     def rotate_around_center(self, center=(0., 0.), point=(0., 0.), angle=0.):
         x_new = (point[0] - center[0]) * np.cos(angle) - (point[1] - center[1]) * np.sin(angle) + center[0]
-        y_new = (point[0] - center[0]) * np.sin(angle) - (point[1] - center[1]) * np.cos(angle) + center[1]
+        y_new = (point[0] - center[0]) * np.sin(angle) + (point[1] - center[1]) * np.cos(angle) + center[1]
         return x_new, y_new
 
     def generate_grass_poses(self, location, yaw):
@@ -181,15 +197,25 @@ class ScytheTaskScene(Scene):
             self.add_grass_patch(self.grass_patch_locations[i], self.grass_patch_yaws[i])
 
         self.create_path_spheres()
-        self.contact_sphere_act = RigidDynamic()
-        contact_sphere = Shape.create_sphere(0.01, self.mat_grass)
-        contact_sphere.set_flag(ShapeFlag.SIMULATION_SHAPE, False)
-        contact_sphere.set_user_data({'color': (0., 0., 0.8, 0.75)})
-        self.contact_sphere_act.attach_shape(contact_sphere)
-        self.contact_sphere_act.set_global_pose([1, 1, 0.])
-        self.contact_sphere_act.set_mass(0.1)
-        self.contact_sphere_act.disable_gravity()
-        self.add_actor(self.contact_sphere_act)
+        # self.debug_sphere_1 = RigidDynamic()
+        # contact_sphere = Shape.create_sphere(0.01, self.mat_grass)
+        # contact_sphere.set_flag(ShapeFlag.SIMULATION_SHAPE, False)
+        # contact_sphere.set_user_data({'color': (0., 0., 0.8, 0.75)})
+        # self.debug_sphere_1.attach_shape(contact_sphere)
+        # self.debug_sphere_1.set_global_pose((*self.dense_reward_location_first[0],0))
+        # self.debug_sphere_1.set_mass(0.1)
+        # self.debug_sphere_1.disable_gravity()
+        # self.add_actor(self.debug_sphere_1)
+        #
+        # self.debug_sphere_2 = RigidDynamic()
+        # contact_sphere = Shape.create_sphere(0.01, self.mat_grass)
+        # contact_sphere.set_flag(ShapeFlag.SIMULATION_SHAPE, False)
+        # contact_sphere.set_user_data({'color': (0.8, 0., 0., 0.75)})
+        # self.debug_sphere_2.attach_shape(contact_sphere)
+        # self.debug_sphere_2.set_global_pose((*self.dense_reward_location_second[0],0))
+        # self.debug_sphere_2.set_mass(0.1)
+        # self.debug_sphere_2.disable_gravity()
+        # self.add_actor(self.debug_sphere_2)
 
     def create_path_spheres(self):
         # TODO: temp! remove
@@ -234,7 +260,7 @@ class ScytheTaskScene(Scene):
             mask[i] = g.cutted
         return positions, mask
 
-    def get_environment_rewards(self):
+    def get_environment_rewards(self, **kwargs):
         rewards = {'is_terminal': False}
         # iterate over all non-cutted grass
         radius = self.grass_width + self.tool.head_length / 2
@@ -269,17 +295,34 @@ class ScytheTaskScene(Scene):
             rewards['dense_reward'] = 0
             tool_pose = multiply_transformations(self.tool.get_global_pose(), self.tool.to_tip_transform)
             for i in range(self.grass_patch_n):
-                rewards['dense_reward'] += 1 * (1/self.grass_patch_n) * exponential_reward(tool_pose[0] - self.grass_patch_locations[i], scale=1, b=10)
+                rewards['dense_reward'] += 1 * (1 / self.grass_patch_n) * exponential_reward(
+                    tool_pose[0] - self.grass_patch_locations[i], scale=1, b=10)
         if self.add_manual_shaped_reward:
-            rewards['z-coord_less_min'] = 0.2 * (min(0, x2[2]))
-            rewards['z-coord_more_max'] = 0.2 * (self.max_cut_height - max(self.max_cut_height, x2[2]))
-            # to incentive having xy-plane higher veolity
-            rewards['velocity_high_in_xy_plane'] = 0.01 * (
-                np.linalg.norm(np.asarray(self.prev_tool_velocity)[:3] * [1, 1, 0]))
-            y_rotation = abs(npq.as_euler_angles(tool_base_pose[1])[1])
-            z_rotation = abs(npq.as_euler_angles(tool_base_pose[1])[2])
-            rewards['tool_rot_y'] = 0.1 * min(1.57079633 - y_rotation, y_rotation - 1.57079633)
-            rewards['tool_rot_z'] = 0.1 * min(-z_rotation, z_rotation)
+            rewards['good_rotation'] = 0
+            rewards['position_first'] = 0
+            rewards['position_second'] = 0
+            for target_first_location, target_second_location, target_rotation in zip(
+                    self.dense_reward_location_first, self.dense_reward_location_second, self.dense_reward_rotation):
+                rewards['good_rotation'] += exponential_reward(
+                                [npq.rotation_intrinsic_distance(self.tool.get_global_pose()[1], target_rotation)],
+                                scale=0.1, b=1)
+                if self.stage:
+                    rewards['position_second'] += exponential_reward(
+                        tool_base_pose[0] - [*target_second_location, 0], scale=0.2, b=10)
+                else:
+                    rewards['position_first'] += exponential_reward(
+                    tool_base_pose[0] - [*target_first_location, 0], scale=0.2, b=10)
+
+            # Manual reward v4
+            # rewards['z-coord_less_min'] = 0.2 * (min(0, x2[2]))
+            # rewards['z-coord_more_max'] = 0.2 * (self.max_cut_height - max(self.max_cut_height, x2[2]))
+            # # to incentive having xy-plane higher veolity
+            # rewards['velocity_high_in_xy_plane'] = 0.01 * (
+            #     np.linalg.norm(np.asarray(self.prev_tool_velocity)[:3] * [1, 1, 0]))
+            # y_rotation = abs(npq.as_euler_angles(tool_base_pose[1])[1])
+            # z_rotation = abs(npq.as_euler_angles(tool_base_pose[1])[2])
+            # rewards['tool_rot_y'] = 0.1 * min(1.57079633 - y_rotation, y_rotation - 1.57079633)
+            # rewards['tool_rot_z'] = 0.1 * min(-z_rotation, z_rotation)
         return rewards
 
     @property
