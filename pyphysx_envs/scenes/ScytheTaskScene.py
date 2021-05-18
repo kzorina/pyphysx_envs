@@ -112,9 +112,9 @@ class ScytheTaskScene(Scene):
             self.grass_patch_yaws = [1 * i for i in range(self.grass_patch_n)]
         else:
             self.grass_patch_yaws = [value for key, value in dict_grass_patch_yaws.items()]
-        self.dense_reward_location_first = []
-        self.dense_reward_location_second = []
-        self.dense_reward_rotation = []
+        self.dense_reward_location_first = [None] * grass_patch_n
+        self.dense_reward_location_second = [None] * grass_patch_n
+        self.dense_reward_rotation = [None] * grass_patch_n
 
         self.grass_per_patch = grass_per_patch
         self.grass_patch_len = grass_patch_len
@@ -233,16 +233,18 @@ class ScytheTaskScene(Scene):
                                                               params[
                                                                   f'grass_patch_yaw_{i}'] if f'grass_patch_yaw_{i}' in params else 0)
         if self.add_manual_shaped_reward:
+            counter = 0
             for loc, yaw in zip(self.grass_patch_locations, self.grass_patch_yaws):
                 # print('loc', loc)
                 # print('yaw', yaw)
-                self.dense_reward_location_first.append(self.rotate_around_center(loc,
-                                                        (loc[0] + 0.8 * self.grass_patch_len, loc[1] + 0), yaw))
-                self.dense_reward_location_second.append(self.rotate_around_center(loc,
-                                                        (loc[0] + -0.8 * self.grass_patch_len, loc[1] + 0), yaw))
+                self.dense_reward_location_first[counter] = self.rotate_around_center(loc,
+                                                        (loc[0] + 0.8 * self.grass_patch_len, loc[1] + 0), yaw)
+                self.dense_reward_location_second[counter] = self.rotate_around_center(loc,
+                                                        (loc[0] + -0.8 * self.grass_patch_len, loc[1] + 0), yaw)
                 # print(self.dense_reward_location_first)
-                self.dense_reward_rotation.append(
-                    quat_from_euler('xyz', [np.deg2rad(0), np.deg2rad(90), np.deg2rad(yaw)]))
+                self.dense_reward_rotation[counter] = quat_from_euler('xyz',
+                                                                      [np.deg2rad(0), np.deg2rad(90), np.deg2rad(yaw)])
+                counter += 1
         if len(update_grass_pos) == len(self.grass_pos):
             self.grass_pos = update_grass_pos
         # else:
