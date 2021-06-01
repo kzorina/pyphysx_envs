@@ -143,6 +143,8 @@ class ScytheTaskScene(Scene):
         return x_new, y_new
 
     def generate_grass_poses(self, location, yaw):
+        # np.random.seed(0)
+        # print(f'in generating grass procedure np seed = {np.random.get_state()}')
         return [[*self.rotate_around_center(location, (x, y), yaw), self.grass_height / 2] for x, y in
                 zip(np.random.uniform(location[0] - self.grass_patch_len / 2,
                                       location[0] + self.grass_patch_len / 2, self.grass_per_patch),

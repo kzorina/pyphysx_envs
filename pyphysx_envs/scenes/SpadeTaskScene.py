@@ -185,14 +185,14 @@ class SpadeTaskScene(Scene):
         inidx = np.logical_and(np.logical_not(inidx1), np.logical_not(inidx2))
         return np.sum(inidx)
 
-    def get_environment_rewards(self):
+    def get_environment_rewards(self, velocity_scale=0.0001, **kwargs):
         rewards = {'is_terminal':False}
         if self.add_spheres:
             rewards['spheres'] = self.spheres_reward_weigth * self.get_num_spheres_in_boxes()
             if self.on_spade_reward_weight > 0.:
                 rewards['above_spheres'] = self.on_spade_reward_weight * self.get_number_of_spheres_above_spade()
             if self.out_of_box_sphere_reward:
-                rewards['outsiders'] = -0.01 * self.get_number_of_spheres_outside()
+                rewards['outsiders'] = -0.1 * velocity_scale * self.get_number_of_spheres_outside()
         if self.negative_box_motion_reward:
             # rewards['box_displacement'] = -5 * (0.5 - max(0.5,
             #                                               np.linalg.norm(self.goal_box_pose -
@@ -204,7 +204,7 @@ class SpadeTaskScene(Scene):
             # rewards['box_displacement'] = -5 * (0.5 - max(0.5,
             #                                               np.linalg.norm(self.goal_box_pose -
             #                                                              self.goal_box_act.get_global_pose()[0])))
-            rewards['sand_box_displacement'] = - 5 * (1 - exponential_reward(self.sand_box_pose[0] -
+            rewards['sand_box_displacement'] = - 5 * velocity_scale * (1 - exponential_reward(self.sand_box_pose[0] -
                                                                    self.sand_box_act.get_global_pose()[0], scale=1,
                                                                    b=10))
         dist = np.linalg.norm(self.goal_box_pose - self.goal_box_act.get_global_pose()[0])

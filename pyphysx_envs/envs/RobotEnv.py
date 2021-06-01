@@ -140,11 +140,12 @@ class RobotEnv(BaseEnv):
             self.joint.set_break_force(20000, 20000)
             self.joint_break_force = 20000
         elif self.tool_name == 'spade':
-            self.joint.set_break_force(2000, 2000)
+            # self.joint.set_break_force(2000, 2000)
+            self.joint.set_break_force(5000, 5000)
             self.joint_break_force = 50
         else:
-            self.joint.set_break_force(5000, 5000)
-            self.joint_break_force = 5000
+            self.joint.set_break_force(20000, 20000)
+            self.joint_break_force = 20000
 
     def get_obs(self, return_space=False):
         scene_obs = self.scene.get_obs()
