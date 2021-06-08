@@ -141,8 +141,9 @@ class RobotEnv(BaseEnv):
             self.joint_break_force = 20000
         elif self.tool_name == 'spade':
             # self.joint.set_break_force(2000, 2000)
+            # self.joint.set_break_force(5000, 5000)
             self.joint.set_break_force(5000, 5000)
-            self.joint_break_force = 50
+            self.joint_break_force = 5000
         else:
             self.joint.set_break_force(20000, 20000)
             self.joint_break_force = 20000
@@ -294,7 +295,7 @@ class RobotEnv(BaseEnv):
         done_flag = self.iter == self.batch_T or self.joint.is_broken() or (
                 'is_terminal' in rewards and rewards['is_terminal']) or (
                 'is_done' in rewards and rewards['is_done'])
-        # print(rewards)
+        print(rewards)
         if self.store_q:
             pickle.dump(self.q_values, open(
                 '/home/kzorina/Work/learning_from_video/data/alignment/save_from_04_03_21/panda/saved_q.pkl', 'wb'))

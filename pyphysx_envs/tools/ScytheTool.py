@@ -59,7 +59,8 @@ class ScytheTool(RigidDynamic):
     @property
     def transform(self):
         # return ([0., 0., self.handle_length - self.head_width / 2], quat_from_euler('xyz', [np.deg2rad(0), np.deg2rad(), np.deg2rad(0)]))
-        return ([0, 0., 0], quat_from_euler('xyz', [np.deg2rad(0), np.deg2rad(90), np.deg2rad(0)]))
+        # return ([0, 0., 0], quat_from_euler('xyz', [np.deg2rad(0), np.deg2rad(90), np.deg2rad(0)]))
+        return ([0, 0., 0], quat_from_euler('xyz', [np.deg2rad(-90), np.deg2rad(0), np.deg2rad(-90)]))
         # return ([0, 0., 0.], npq.one)
 
     @property
