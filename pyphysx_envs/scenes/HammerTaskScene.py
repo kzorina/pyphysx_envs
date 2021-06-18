@@ -146,7 +146,7 @@ class HammerTaskScene(Scene):
             # 'is_done': 1 if self.get_nail_z() < 0.001 else 0,
             'dense_reward': 1 * exponential_reward(multiply_transformations(self.tool.get_global_pose(),
                                                                             self.tool.to_tip_transform)[0] -
-                                                   self.nail_act.get_global_pose(), scale=1,
+                                                   self.nail_act.get_global_pose()[0], scale=1,
                                                    b=10) if self.add_dense_reward else 0,
         }
 
