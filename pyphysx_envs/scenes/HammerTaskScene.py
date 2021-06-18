@@ -2,6 +2,8 @@ from typing import Optional, List
 from pyphysx import *
 import numpy as np
 from collections import deque
+from rlpyt_utils.utils import exponential_reward
+from pyphysx_utils.transformations import multiply_transformations
 
 
 class HammerTaskScene(Scene):
@@ -9,7 +11,8 @@ class HammerTaskScene(Scene):
     def __init__(self, nail_static_friction=10., nail_dynamic_friction=10., nail_restitution=0.,
                  other_static_friction=10., other_dynamic_friction=10., path_spheres_n=0,
                  nail_dim=((0.1, 0.1, 0.01), (0.01, 0.01, 0.3)), account_last_n_steps_speed=3,
-                 nail_pose=(0.0, 0.0, 0.1), nail_mass=0.5, scene_demo_importance=1., **kwargs):
+                 nail_pose=(0.0, 0.0, 0.1), nail_mass=0.5, scene_demo_importance=1.,
+                 add_dense_reward=False, **kwargs):
         super().__init__(scene_flags=[
             # SceneFlag.ENABLE_STABILIZATION,
             SceneFlag.ENABLE_FRICTION_EVERY_ITERATION,
@@ -32,6 +35,7 @@ class HammerTaskScene(Scene):
         self.hammer_speed_z = deque(maxlen=account_last_n_steps_speed)
         self.steps_since_solved = 0
         self.nail_overlaped = False
+        self.add_dense_reward = add_dense_reward
 
     def add_nail_plank(self, nail_pose):
         nail_act = RigidDynamic()
@@ -41,7 +45,7 @@ class HammerTaskScene(Scene):
         nail_head_tip: Shape = Shape.create_box((1.4 * self.nail_dim[0][0],
                                                  1.4 * self.nail_dim[0][1],
                                                  0.2 * self.nail_dim[0][2]),
-                                                self.mat_nail) # untohable part of the head of the nail
+                                                self.mat_nail)  # untohable part of the head of the nail
         nail_head_tip.set_flag(ShapeFlag.SIMULATION_SHAPE, False)
         nail_head_tip.set_user_data({'color': 'tab:gray', 'name': 'nail_head_safety'})
         tip: Shape = Shape.create_box((self.nail_dim[1][0], self.nail_dim[1][1], self.nail_dim[1][2]),
@@ -96,6 +100,8 @@ class HammerTaskScene(Scene):
 
     def reset_object_positions(self, params):
         """ Reset objects positions, s.t. nail is 10cm about nail_position (i.e. not nailed). """
+        # np.random.seed(31)
+        # print(f'in generating grass procedure np seed = {np.random.get_state()}')
         for a in self.get_dynamic_rigid_actors():
             a.set_linear_velocity(np.zeros(3))
             a.set_angular_velocity(np.zeros(3))
@@ -131,12 +137,17 @@ class HammerTaskScene(Scene):
             'nail_hammered': 1 if self.get_nail_z() < 0.001 else 0,
             # 'overlaping_penalty': -0.2 * self.nail_overlaped,
             'overlaping_penalty': -0.6 * velocity_scale * self.nail_overlaped,
-            'low_speed_penalty': -0.1 * (self.steps_since_solved > 0 and self.steps_since_solved < 10 and self.get_max_speed_last_steps() > -0.1),
+            'low_speed_penalty': -0.1 * (
+                        self.steps_since_solved > 0 and self.steps_since_solved < 10 and self.get_max_speed_last_steps() > -0.1),
             # 'is_terminal': self._nail_hammer_overlaps(),
             'is_terminal': False,
             # 'is_terminal': self._nail_hammer_overlaps() or (self.get_nail_z() < 0.001 and self.get_max_speed_last_steps() > -0.1),
             'is_done': False,
             # 'is_done': 1 if self.get_nail_z() < 0.001 else 0,
+            'dense_reward': 1 * exponential_reward(multiply_transformations(self.tool.get_global_pose(),
+                                                                            self.tool.to_tip_transform)[0] -
+                                                   self.nail_act.get_global_pose(), scale=1,
+                                                   b=10) if self.add_dense_reward else 0,
         }
 
     @property

@@ -295,7 +295,7 @@ class RobotEnv(BaseEnv):
         done_flag = self.iter == self.batch_T or self.joint.is_broken() or (
                 'is_terminal' in rewards and rewards['is_terminal']) or (
                 'is_done' in rewards and rewards['is_done'])
-        print(rewards)
+        # print(rewards)
         if self.store_q:
             pickle.dump(self.q_values, open(
                 '/home/kzorina/Work/learning_from_video/data/alignment/save_from_04_03_21/panda/saved_q.pkl', 'wb'))
@@ -303,5 +303,7 @@ class RobotEnv(BaseEnv):
             rewards.pop('is_terminal')
             # return EnvStep(self.get_obs(), rewards, done_flag, EnvInfo())  # debug line
         return EnvStep(self.get_obs(), sum(rewards.values()) / self.horizon,
+        # return EnvStep(self.get_obs(),  sum(rewards[x] for x in ['nail_hammered', 'overlaping_penalty']) / self.horizon,
+        # return EnvStep(self.get_obs(),  sum(rewards[x] for x in ['cutted_grass']) / self.horizon,
                        done_flag, EnvInfo())
                        # done_flag, EnvInfo(velocity_violation_penalty=self.velocity_violation_penalty))
