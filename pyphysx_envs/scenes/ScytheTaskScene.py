@@ -96,7 +96,8 @@ class ScytheTaskScene(Scene):
     def __init__(self, grass_patch_n=1, dict_grass_patch_locations=None, dict_grass_patch_yaws=None, grass_per_patch=10,
                  grass_patch_len=0.4, grass_patch_width=0.1, grass_height=0.3, grass_width=0.005,
                  path_spheres_n=0, threshold_cuting_vel=0.0000002, scene_demo_importance=1.,
-                 max_cut_height=0.1, min_cut_vel=0.1, add_dense_reward=False, add_manual_shaped_reward=False, **kwargs):
+                 max_cut_height=0.1, min_cut_vel=0.1, add_dense_reward=False, add_manual_shaped_reward=False,
+                 start_second_stage=16, **kwargs):
         super().__init__(scene_flags=[
             # SceneFlag.ENABLE_STABILIZATION,
             SceneFlag.ENABLE_FRICTION_EVERY_ITERATION,
@@ -135,6 +136,7 @@ class ScytheTaskScene(Scene):
         self.prev_tool_velocity = np.zeros(6)
         self.add_dense_reward = add_dense_reward
         self.add_manual_shaped_reward = add_manual_shaped_reward
+        self.start_second_stage = start_second_stage
         self.stage = 0
 
     def rotate_around_center(self, center=(0., 0.), point=(0., 0.), angle=0.):
@@ -143,7 +145,7 @@ class ScytheTaskScene(Scene):
         return x_new, y_new
 
     def generate_grass_poses(self, location, yaw):
-        # np.random.seed(0)
+        # np.random.seed(42)
         # print(f'in generating grass procedure np seed = {np.random.get_state()}')
         return [[*self.rotate_around_center(location, (x, y), yaw), self.grass_height / 2] for x, y in
                 zip(np.random.uniform(location[0] - self.grass_patch_len / 2,

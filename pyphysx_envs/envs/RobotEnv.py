@@ -204,7 +204,7 @@ class RobotEnv(BaseEnv):
         self.prev_action = action
         terminal_reward = False
         self.iter += 1
-        if self.iter == 16 and self.tool_name == 'scythe':
+        if self.iter == self.scene.start_second_stage and self.tool_name == 'scythe':
             self.scene.stage = 1
         if self.use_simulate:
             for _ in range(self.sub_steps):

@@ -62,7 +62,7 @@ class SpadeTaskScene(Scene):
     def scene_setup(self):
         # self.renderer = renderer
         self.add_actor(RigidStatic.create_plane(material=self.mat_plane))
-        self.goal_box_act = create_actor_box([1., 1., 0.0], color='brown', height=0.1, width=0.01, mass=5.)
+        self.goal_box_act = create_actor_box([1., 1., 0.0], color='brown', height=0.07, width=0.01, mass=5.)
         self.goal_box_pose = [1., 1., 0.]
         self.add_actor(self.goal_box_act)
         if self.add_spheres:
