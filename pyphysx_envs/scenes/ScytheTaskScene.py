@@ -145,7 +145,7 @@ class ScytheTaskScene(Scene):
         return x_new, y_new
 
     def generate_grass_poses(self, location, yaw):
-        # np.random.seed(42)
+        # np.random.seed(0)
         # print(f'in generating grass procedure np seed = {np.random.get_state()}')
         return [[*self.rotate_around_center(location, (x, y), yaw), self.grass_height / 2] for x, y in
                 zip(np.random.uniform(location[0] - self.grass_patch_len / 2,
@@ -242,9 +242,13 @@ class ScytheTaskScene(Scene):
                 # print('loc', loc)
                 # print('yaw', yaw)
                 self.dense_reward_location_first[counter] = self.rotate_around_center(loc,
-                                                        (loc[0] + 0.8 * self.grass_patch_len, loc[1] + 0), yaw)
+                                                        (loc[0] + 0.8 * self.grass_patch_len,
+                                                         # loc[1] + 0), yaw)
+                                                         loc[1] - self.grass_patch_width / 2), yaw)
                 self.dense_reward_location_second[counter] = self.rotate_around_center(loc,
-                                                        (loc[0] + -0.8 * self.grass_patch_len, loc[1] + 0), yaw)
+                                                        (loc[0] - 0.8 * self.grass_patch_len,
+                                                         # loc[1] + 0), yaw)
+                                                         loc[1] - self.grass_patch_width / 2), yaw)
                 # print(self.dense_reward_location_first)
                 self.dense_reward_rotation[counter] = quat_from_euler('xyz',
                                                                       [np.deg2rad(0), np.deg2rad(90), np.deg2rad(yaw)])
@@ -311,16 +315,20 @@ class ScytheTaskScene(Scene):
             rewards['position_second'] = 0
             for target_first_location, target_second_location, target_rotation in zip(
                     self.dense_reward_location_first, self.dense_reward_location_second, self.dense_reward_rotation):
-                rewards['good_rotation'] += exponential_reward(
-                                [npq.rotation_intrinsic_distance(self.tool.get_global_pose()[1], target_rotation)],
-                                scale=0.1, b=1)
+                # rewards['good_rotation'] += exponential_reward(
+                #                 [npq.rotation_intrinsic_distance(self.tool.get_global_pose()[1], target_rotation)],
+                #                 scale=0.3, b=1)
+                vector_first_sec_loc = np.array([*target_second_location, 0]) - np.array([*target_second_location, 0])
+                vector_first_sec_loc = vector_first_sec_loc / norm(vector_first_sec_loc)
+                angle_scythe_dist = np.abs(np.arccos(np.dot(u, vector_first_sec_loc))) # angle between
+                rewards['good_rotation'] += - angle_scythe_dist
                 if self.stage:
                     rewards['position_second'] += exponential_reward(
                         tool_base_pose[0] - [*target_second_location, 0], scale=0.2, b=10)
                 else:
                     rewards['position_first'] += exponential_reward(
-                    tool_base_pose[0] - [*target_first_location, 0], scale=0.2, b=10)
-
+                        tool_base_pose[0] - [*target_first_location, 0], scale=0.2, b=10)
+            # print(rewards['position_second'])
             # Manual reward v4
             # rewards['z-coord_less_min'] = 0.2 * (min(0, x2[2]))
             # rewards['z-coord_more_max'] = 0.2 * (self.max_cut_height - max(self.max_cut_height, x2[2]))

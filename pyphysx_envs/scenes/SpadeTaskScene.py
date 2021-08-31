@@ -187,6 +187,7 @@ class SpadeTaskScene(Scene):
 
     def get_environment_rewards(self, velocity_scale=0.0001, **kwargs):
         rewards = {'is_terminal':False}
+        rewards['box_displacement'] = 0
         if self.add_spheres:
             rewards['spheres'] = self.spheres_reward_weigth * self.get_num_spheres_in_boxes()
             if self.on_spade_reward_weight > 0.:

@@ -12,6 +12,7 @@ class HammerTaskScene(Scene):
                  other_static_friction=10., other_dynamic_friction=10., path_spheres_n=0,
                  nail_dim=((0.1, 0.1, 0.01), (0.01, 0.01, 0.3)), account_last_n_steps_speed=3,
                  nail_pose=(0.0, 0.0, 0.1), nail_mass=0.5, scene_demo_importance=1.,
+                 obs_add_nail=False,
                  add_dense_reward=False, **kwargs):
         super().__init__(scene_flags=[
             # SceneFlag.ENABLE_STABILIZATION,
@@ -36,6 +37,7 @@ class HammerTaskScene(Scene):
         self.steps_since_solved = 0
         self.nail_overlaped = False
         self.add_dense_reward = add_dense_reward
+        self.obs_add_nail = obs_add_nail
 
     def add_nail_plank(self, nail_pose):
         nail_act = RigidDynamic()
@@ -136,7 +138,7 @@ class HammerTaskScene(Scene):
         return {
             'nail_hammered': 1 if self.get_nail_z() < 0.001 else 0,
             # 'overlaping_penalty': -0.2 * self.nail_overlaped,
-            'overlaping_penalty': -0.6 * velocity_scale * self.nail_overlaped,
+            'overlaping_penalty': -1.6 * velocity_scale * self.nail_overlaped,
             'low_speed_penalty': -0.1 * (
                         self.steps_since_solved > 0 and self.steps_since_solved < 10 and self.get_max_speed_last_steps() > -0.1),
             # 'is_terminal': self._nail_hammer_overlaps(),
@@ -160,6 +162,8 @@ class HammerTaskScene(Scene):
 
     def get_obs(self):
         obs = [[]]
+        if self.obs_add_nail:
+            obs.append(self.nail_act.get_global_pose()[0][:2])
         return obs
 
     @property

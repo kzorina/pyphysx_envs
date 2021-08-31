@@ -109,7 +109,7 @@ class ToolEnv(BaseEnv):
                                                            b=10)
             rewards['demo_orientation'] = exponential_reward([npq.rotation_intrinsic_distance(tool_quat, dquat)],
                                                              scale=self.scene.demo_importance * 0.5, b=1)
-        print(rewards)
+        # print(rewards)
         if self.render:
             self.renderer.update(blocking=True)
             # for _ in range(self.sleep_steps):

@@ -28,7 +28,7 @@ class RobotEnv(BaseEnv):
                  dq_limit_percentage=0.9, additional_objects=None, obs_add_q=False, obs_add_action=False,
                  velocity_violation_penalty=1., action_l2_regularization=0., broken_joint_penalty=0.,
                  increase_velocity_penalty_factor=0., increase_velocity_start_itr=0, use_simulate=True,
-                 store_q=False, **kwargs):
+                 store_q=False, shared_dict=None, **kwargs):
         self.increase_velocity_penalty_factor = increase_velocity_penalty_factor
         self.increase_velocity_start_itr = increase_velocity_start_itr
         self.broken_joint_penalty = broken_joint_penalty
@@ -41,6 +41,7 @@ class RobotEnv(BaseEnv):
         self.tool_name = tool_name
         # self.use_simulate = use_simulate
         self.store_q = store_q
+        self.shared_dict = shared_dict
         if self.store_q:
             self.q_values = []
 
@@ -140,9 +141,9 @@ class RobotEnv(BaseEnv):
             self.joint.set_break_force(20000, 20000)
             self.joint_break_force = 20000
         elif self.tool_name == 'spade':
-            # self.joint.set_break_force(2000, 2000)
+            self.joint.set_break_force(2000, 2000)
             # self.joint.set_break_force(5000, 5000)
-            self.joint.set_break_force(5000, 5000)
+            # self.joint.set_break_force(5000, 5000)
             self.joint_break_force = 5000
         else:
             self.joint.set_break_force(20000, 20000)
@@ -151,8 +152,8 @@ class RobotEnv(BaseEnv):
     def get_obs(self, return_space=False):
         scene_obs = self.scene.get_obs()
         if return_space:
-            low = [-2.] * (7 + len(*scene_obs))
-            high = [2.] * (7 + len(*scene_obs))
+            low = [-2.] * (7 + np.sum([len(el) for el in scene_obs]))
+            high = [2.] * (7 + np.sum([len(el) for el in scene_obs]))
             if self.obs_add_time:
                 low.append(0)
                 high.append(10)
@@ -174,7 +175,8 @@ class RobotEnv(BaseEnv):
             obs_list.append(list(self.q.values()))
         if self.obs_add_action:
             obs_list.append(list(self.prev_action))
-        obs_list.append(*scene_obs)
+        for el in scene_obs:
+            obs_list.append(el)
         return np.concatenate(obs_list).astype(np.float32)
 
     def reset(self):
@@ -186,7 +188,12 @@ class RobotEnv(BaseEnv):
         if self.render and isinstance(self.renderer, MeshcatViewer):
             self.renderer.publish_animation()
         self.iter = 0
-        params = params_fill_default(params_default=self.scene.default_params, params=self.params)
+
+        if self.shared_dict is not None:
+            sampler_params, _ = self.shared_dict['rand_sampler']()
+            params = params_fill_default(params_default=self.scene.default_params, params=sampler_params)
+        else:
+            params = params_fill_default(params_default=self.scene.default_params, params=self.params)
         # self.scene.tool.set_global_pose(self.params['tool_init_position'])
         for i, name in enumerate(self.robot.get_joint_names()):
             self.q[name] = self.robot.init_q[i] + np.random.normal(0., 0.01)
@@ -204,7 +211,7 @@ class RobotEnv(BaseEnv):
         self.prev_action = action
         terminal_reward = False
         self.iter += 1
-        if self.iter == self.scene.start_second_stage and self.tool_name == 'scythe':
+        if self.tool_name == 'scythe' and self.iter == self.scene.start_second_stage:
             self.scene.stage = 1
         if self.use_simulate:
             for _ in range(self.sub_steps):
