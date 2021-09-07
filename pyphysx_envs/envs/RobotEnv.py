@@ -9,7 +9,7 @@ import numpy as np
 import torch
 from pyphysx import *
 from pyphysx_utils.transformations import multiply_transformations, inverse_transform, pose_to_transformation_matrix
-from pyphysx_render.utils import gl_color_from_matplotlib
+# from pyphysx_render.utils import gl_color_from_matplotlib
 from pyphysx_envs.utils import params_fill_default
 from pyphysx_render.meshcat_render import MeshcatViewer
 import pickle
