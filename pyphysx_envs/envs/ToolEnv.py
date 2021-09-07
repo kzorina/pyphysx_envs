@@ -5,7 +5,7 @@ from rlpyt.envs.base import EnvInfo, Env, EnvStep
 from pyphysx_envs.utils import get_tool, get_scene
 import quaternion as npq
 import numpy as np
-from scipy.spatial.transform import Rotation as R
+# from scipy.spatial.transform import Rotation as R
 from pyphysx_envs.utils import params_fill_default
 
 
