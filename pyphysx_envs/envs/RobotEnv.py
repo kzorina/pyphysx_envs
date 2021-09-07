@@ -11,7 +11,7 @@ from pyphysx import *
 from pyphysx_utils.transformations import multiply_transformations, inverse_transform, pose_to_transformation_matrix
 # from pyphysx_render.utils import gl_color_from_matplotlib
 from pyphysx_envs.utils import params_fill_default
-from pyphysx_render.meshcat_render import MeshcatViewer
+
 import pickle
 from collections import namedtuple
 
@@ -106,6 +106,7 @@ class RobotEnv(BaseEnv):
 
         # add scene to renderer
         if self.render:
+            from pyphysx_render.meshcat_render import MeshcatViewer
             if isinstance(self.renderer, MeshcatViewer):
                 self.renderer.add_physx_scene(self.scene)
             else:
