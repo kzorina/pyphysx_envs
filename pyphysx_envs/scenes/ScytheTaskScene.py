@@ -355,8 +355,7 @@ class ScytheTaskScene(Scene):
 
     @property
     def default_params(self):
-        return {'constant': {},
-                'variable': {
-                    'nail_position': (1., 1., 0.),
-                    'tool_init_position': (0., 0., 1.)
-                }}
+        default_params = {'constant': {}, 'variable': {}}
+        for i in range(self.grass_patch_n):
+            default_params['variable'][f'grass_patch_location_{i}'] = [i, i, 0.]
+        return default_params

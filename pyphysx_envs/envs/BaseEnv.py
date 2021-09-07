@@ -1,7 +1,7 @@
 from rlpyt.envs.base import EnvInfo, Env, EnvStep
 from pyphysx_envs.utils import params_fill_default
 from pyphysx_utils.rate import Rate
-from pyphysx_render.meshcat_render import MeshcatViewer
+# from pyphysx_render.meshcat_render import MeshcatViewer
 
 
 class BaseEnv(Env):

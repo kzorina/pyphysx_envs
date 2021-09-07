@@ -29,11 +29,12 @@ def create_actor_box(pos, length_x=0.5, length_y=0.5, width=0.01, height=0.1, ma
 
 class SpadeTaskScene(Scene):
 
-    def __init__(self, add_spheres=False, obs_add_sand=False, sphere_color='sandybrown', sand_deposit_length=0.4,
+    def __init__(self, add_spheres=False, obs_add_sand=False, obs_add_goal_box=False, sphere_color='sandybrown', sand_deposit_length=0.4,
                  plane_static_friction=0.1, plane_dynamic_friction=0.1, plane_restitution=0.,
                  sphere_static_friction=5., sphere_dynamic_friction=5., scene_demo_importance=1.,
                  spheres_reward_weigth=0.1, on_spade_reward_weight=0., out_of_box_sphere_reward=False,
-                 negative_box_motion_reward=None, negative_sand_box_motion_reward=None, path_spheres_n=0, spade_default_params=None, **kwargs
+                 negative_box_motion_reward=None, negative_sand_box_motion_reward=None, path_spheres_n=0,
+                 spade_default_params=None, add_dense_reward=False, **kwargs
                  ):
         super().__init__(scene_flags=[
             # SceneFlag.ENABLE_STABILIZATION,
@@ -48,6 +49,7 @@ class SpadeTaskScene(Scene):
         self.mat_spheres = Material(static_friction=sphere_static_friction, dynamic_friction=sphere_dynamic_friction)
         self.add_spheres = add_spheres
         self.obs_add_sand = obs_add_sand
+        self.obs_add_goal_box = obs_add_goal_box
         self.sphere_color = sphere_color
         self.sand_deposit_length = sand_deposit_length
         self.demo_importance = scene_demo_importance
@@ -58,6 +60,7 @@ class SpadeTaskScene(Scene):
         self.negative_box_motion_reward = negative_box_motion_reward
         self.negative_sand_box_motion_reward = negative_sand_box_motion_reward
         self.path_spheres_n = path_spheres_n
+        self.add_dense_reward = add_dense_reward
 
     def scene_setup(self):
         # self.renderer = renderer
@@ -209,6 +212,18 @@ class SpadeTaskScene(Scene):
                                                                    self.sand_box_act.get_global_pose()[0], scale=1,
                                                                    b=10))
         dist = np.linalg.norm(self.goal_box_pose - self.goal_box_act.get_global_pose()[0])
+        rewards['dense_reward'] = 0
+        if self.add_dense_reward:
+            # spheres should be close to the goal box
+            for sphere in self.spheres_act:
+                rewards['dense_reward'] += exponential_reward(sphere.get_global_pose()[0] -
+                                                                   self.goal_box_act.get_global_pose()[0], scale=1,
+                                                                   b=10)
+            rewards['dense_reward'] = rewards['dense_reward'] / len(self.spheres_act)
+            # tool should be close to sand
+            rewards['dense_reward'] += 0.05 * exponential_reward(self.tool.get_global_pose()[0] -
+                                                                   self.sand_box_act.get_global_pose()[0], scale=1,
+                                                                   b=10)
         if dist > 0.05:
             rewards['is_terminal'] = True
             rewards['box_displacement'] = -10.
@@ -217,7 +232,9 @@ class SpadeTaskScene(Scene):
     def get_obs(self):
         obs = [[]]
         if self.obs_add_sand:
-            obs.append(self.sand_box_act.get_global_pose()[0])
+            obs.append(self.sand_box_act.get_global_pose()[0][:2])
+        if self.obs_add_goal_box:
+            obs.append(self.goal_box_act.get_global_pose()[0][:2])
         return obs
 
     @property
