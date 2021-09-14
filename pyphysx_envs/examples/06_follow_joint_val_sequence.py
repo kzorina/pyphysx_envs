@@ -18,6 +18,7 @@ env = RobotEnv(scene_name=tool_name, tool_name=tool_name, robot_name=robot_name,
                obs_add_q=True,
                render=True,
                add_spheres=True,
+               demonstration_q=joint_values,
                spade_mesh_path=path.join(path.dirname(path.dirname(__file__)), 'data/spade_mesh.obj'),
                params=demo_params,
                render_dict=dict(
