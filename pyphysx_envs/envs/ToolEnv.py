@@ -68,10 +68,10 @@ class ToolEnv(BaseEnv):
 
     def step(self, action):
         self.iter += 1
-        if self.iter == 10 and self.tool_name == 'scythe':
+        if self.tool_name == 'scythe' and self.iter == self.scene.start_second_stage:
             self.scene.stage = 1
         terminal_reward = False
-        action = np.clip(action, -10., 10.)
+        action = np.clip(action, -2., 2.)
         if self.tool_name == 'hammer':
             # print(action[2])
             self.scene.hammer_speed_z.append(action[2])
