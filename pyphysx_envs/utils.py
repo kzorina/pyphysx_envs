@@ -158,9 +158,9 @@ def follow_tool_tip_traj(env, poses, rewards_to_track_name=('spheres'), add_end_
                     open(save_to_file_name,'wb'))
         if ('nail_hammered' in rewards_to_track_name or 'cutted_grass' in rewards_to_track_name) and total_reward_to_track > 0:
             scale_change = (len(poses) + add_end_steps) / max(i, 1)
-            action = np.zeros((env._action_space.shape))
+            # action = np.zeros((env._action_space.shape))
             for _ in range(5):
-                _, rewards = env.step(action)
+                _, rewards = env.step(np.zeros((env._action_space.shape)))
             if custom_hammer_return:
                 return scale_change * total_reward_to_track, scale_change * traj_follow_reward, i + 1
             else:
@@ -171,7 +171,7 @@ def follow_tool_tip_traj(env, poses, rewards_to_track_name=('spheres'), add_end_
     # for _ in range(5):
     #     _, rewards = env.step(action)
     if custom_hammer_return:
-        return total_reward_to_track, traj_follow_reward, -1
+        return total_reward_to_track, traj_follow_reward, len(poses) + add_end_steps - 1
     else:
         if return_tool_pose_list:
             return total_reward_to_track, traj_follow_reward, tool_pose_list

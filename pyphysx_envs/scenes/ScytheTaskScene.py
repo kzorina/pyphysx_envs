@@ -97,7 +97,7 @@ class ScytheTaskScene(Scene):
                  grass_patch_len=0.4, grass_patch_width=0.1, grass_height=0.3, grass_width=0.005,
                  path_spheres_n=0, threshold_cuting_vel=0.0000002, scene_demo_importance=1.,
                  max_cut_height=0.1, min_cut_vel=0.1, add_dense_reward=False, add_manual_shaped_reward=False,
-                 start_second_stage=16, **kwargs):
+                 start_second_stage=16, obs_add_grass_patch_location_0=False, **kwargs):
         super().__init__(scene_flags=[
             # SceneFlag.ENABLE_STABILIZATION,
             SceneFlag.ENABLE_FRICTION_EVERY_ITERATION,
@@ -113,8 +113,8 @@ class ScytheTaskScene(Scene):
             self.grass_patch_yaws = [1 * i for i in range(self.grass_patch_n)]
         else:
             self.grass_patch_yaws = [value for key, value in dict_grass_patch_yaws.items()]
-        self.dense_reward_location_first = [None] * grass_patch_n
-        self.dense_reward_location_second = [None] * grass_patch_n
+        self.dense_reward_location_first = [0., 0.] * grass_patch_n
+        self.dense_reward_location_second = [0., 0.] * grass_patch_n
         self.dense_reward_rotation = [None] * grass_patch_n
 
         self.grass_per_patch = grass_per_patch
@@ -137,6 +137,7 @@ class ScytheTaskScene(Scene):
         self.add_dense_reward = add_dense_reward
         self.add_manual_shaped_reward = add_manual_shaped_reward
         self.start_second_stage = start_second_stage
+        self.obs_add_grass_patch_location_0 = obs_add_grass_patch_location_0
         self.stage = 0
 
     def rotate_around_center(self, center=(0., 0.), point=(0., 0.), angle=0.):
@@ -307,7 +308,7 @@ class ScytheTaskScene(Scene):
             rewards['dense_reward'] = 0
             tool_pose = multiply_transformations(self.tool.get_global_pose(), self.tool.to_tip_transform)
             for i in range(self.grass_patch_n):
-                rewards['dense_reward'] += 1 * (1 / self.grass_patch_n) * exponential_reward(
+                rewards['dense_reward'] += 0.1 * (1 / self.grass_patch_n) * exponential_reward(
                     tool_pose[0] - self.grass_patch_locations[i], scale=1, b=10)
         if self.add_manual_shaped_reward:
             rewards['good_rotation'] = 0
@@ -318,16 +319,22 @@ class ScytheTaskScene(Scene):
                 # rewards['good_rotation'] += exponential_reward(
                 #                 [npq.rotation_intrinsic_distance(self.tool.get_global_pose()[1], target_rotation)],
                 #                 scale=0.3, b=1)
-                vector_first_sec_loc = np.array([*target_second_location, 0]) - np.array([*target_second_location, 0])
+                vector_first_sec_loc = np.array([*target_second_location, 0]) - np.array([*target_first_location, 0])
                 vector_first_sec_loc = vector_first_sec_loc / norm(vector_first_sec_loc)
-                angle_scythe_dist = np.abs(np.arccos(np.dot(u, vector_first_sec_loc))) # angle between
-                rewards['good_rotation'] += - angle_scythe_dist
+                angle_scythe_dist = np.abs(np.arccos(np.dot(u, vector_first_sec_loc)))  # angle between
+                # rewards['good_rotation'] -= 0.05 * angle_scythe_dist
+                rewards['good_rotation'] += exponential_reward(
+                    [npq.rotation_intrinsic_distance(tool_base_pose[1],
+                                                     quat_from_euler('xyz', [-self.grass_patch_yaws[0], np.deg2rad(90), np.deg2rad(0)]))],
+                                                             scale=0.3, b=1)
+
                 if self.stage:
                     rewards['position_second'] += exponential_reward(
-                        tool_base_pose[0] - [*target_second_location, 0], scale=0.2, b=10)
+                        tool_base_pose[0] - [*target_second_location, 0], scale=0.5, b=10)
                 else:
                     rewards['position_first'] += exponential_reward(
-                        tool_base_pose[0] - [*target_first_location, 0], scale=0.2, b=10)
+                        tool_base_pose[0] - [*target_first_location, 0], scale=0.5, b=10)
+            print(rewards)
             # print(rewards['position_second'])
             # Manual reward v4
             # rewards['z-coord_less_min'] = 0.2 * (min(0, x2[2]))
@@ -351,6 +358,8 @@ class ScytheTaskScene(Scene):
 
     def get_obs(self):
         obs = [[]]
+        if self.obs_add_grass_patch_location_0:
+            obs.append(self.grass_patch_locations[0][:2])
         return obs
 
     @property

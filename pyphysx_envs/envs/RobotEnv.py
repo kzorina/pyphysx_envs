@@ -8,6 +8,7 @@ import quaternion as npq
 import numpy as np
 import torch
 from pyphysx import *
+from pyphysx_render.meshcat_render import MeshcatViewer
 from pyphysx_utils.transformations import multiply_transformations, inverse_transform, pose_to_transformation_matrix
 # from pyphysx_render.utils import gl_color_from_matplotlib
 from pyphysx_envs.utils import params_fill_default
@@ -106,7 +107,7 @@ class RobotEnv(BaseEnv):
 
         # add scene to renderer
         if self.render:
-            from pyphysx_render.meshcat_render import MeshcatViewer
+
             if isinstance(self.renderer, MeshcatViewer):
                 self.renderer.add_physx_scene(self.scene)
             else:
@@ -192,7 +193,8 @@ class RobotEnv(BaseEnv):
 
         if self.shared_dict is not None:
             sampler_params, _ = self.shared_dict['rand_sampler']()
-            params = params_fill_default(params_default=self.scene.default_params, params=sampler_params)
+            params = params_fill_default(params_default=self.scene.default_params,
+                                         params=self.params.update(sampler_params) if len(sampler_params) > 0 else self.params)
         else:
             params = params_fill_default(params_default=self.scene.default_params, params=self.params)
         # self.scene.tool.set_global_pose(self.params['tool_init_position'])
