@@ -2,15 +2,16 @@ from pyphysx import *
 import trimesh
 import numpy as np
 from pyphysx_utils.urdf_robot_parser import quat_from_euler
-
+import os
 
 class SpadeTool(RigidDynamic):
     """
     Creation of spade tool.
     """
 
-    def __init__(self, mass=0.1, spade_mesh_path='spade_mesh.obj', scale=1e-3,
-                 static_friction=0.1, dynamic_friction=0.1, demo_tool=False, **kwargs):
+    def __init__(self, mass=0.1, scale=1e-3, static_friction=0.1, dynamic_friction=0.1, demo_tool=False,
+                 spade_mesh_path=f'{os.path.join(os.path.dirname(__file__), "spade_mesh.obj")}',
+                 **kwargs):
         # todo: write documentation, explain axis, sizes, etc
         super().__init__()
         self.mat = Material(static_friction=static_friction,
