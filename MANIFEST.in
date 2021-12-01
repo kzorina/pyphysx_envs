@@ -16,3 +16,4 @@ include pyphysx_envs/robot_data/talos_desription/talos_data/meshes/torso/*
 include pyphysx_envs/robot_data/talos_desription/talos_data/meshes/v2/*
 include pyphysx_envs/robot_data/talos_desription/talos_data/robots/*
 include pyphysx_envs/robot_data/talos_desription/talos_data/srdf/*
+include pyphysx_envs/tools/spade_mesh.obj
