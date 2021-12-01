@@ -9,7 +9,7 @@ class SpadeTool(RigidDynamic):
     Creation of spade tool.
     """
 
-    def __init__(self, mass=0.1, spade_mesh_path='envs/spade_v1.obj', scale=1e-3,
+    def __init__(self, mass=0.1, spade_mesh_path='spade_mesh.obj', scale=1e-3,
                  static_friction=0.1, dynamic_friction=0.1, demo_tool=False, **kwargs):
         # todo: write documentation, explain axis, sizes, etc
         super().__init__()
