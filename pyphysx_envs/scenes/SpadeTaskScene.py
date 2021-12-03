@@ -240,13 +240,13 @@ class SpadeTaskScene(Scene):
     @property
     def _default_params(self):
         return {'constant': {
+            'tool_init_position': (0., 0., 0.),
             'num_spheres': 200,
             'sphere_radius': 0.02,
             'sphere_mass': 0.001,
             'sand_buffer_yaw': 0.
         },
             'variable': {
-                'tool_init_position': (0., -0.7, 0.05),
                 'goal_box_position': (0., 1., 0.),
                 'sand_buffer_position': (0., 0., 0.)
 

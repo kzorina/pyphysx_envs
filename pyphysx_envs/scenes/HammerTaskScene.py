@@ -168,8 +168,7 @@ class HammerTaskScene(Scene):
 
     @property
     def default_params(self):
-        return {'constant': {},
+        return {'constant': {'tool_init_position': (0., 0., 0.)},
                 'variable': {
-                    'nail_position': (1., 1., 0.),
-                    'tool_init_position': (0., 0., 1.)
+                    'nail_position': (1., 1., 0.)
                 }}
