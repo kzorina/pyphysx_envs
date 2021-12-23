@@ -130,6 +130,10 @@ class HammerTaskScene(Scene):
                         continue
                     if s.overlaps(ns, self.tool.get_global_pose(), self.nail_act.get_global_pose()):
                         return True
+                for ns in self.holder_act.get_atached_shapes():
+                    nud = ns.get_user_data()
+                    if s.overlaps(ns, self.tool.get_global_pose(), self.nail_act.get_global_pose()):
+                        return True
                 return False
         return False
 
@@ -168,7 +172,7 @@ class HammerTaskScene(Scene):
 
     @property
     def default_params(self):
-        return {'constant': {'tool_init_position': (0., 0., 0.)},
+        return {'constant': {'tool_init_position': (0., 0., 1.)},
                 'variable': {
                     'nail_position': (1., 1., 0.)
                 }}
