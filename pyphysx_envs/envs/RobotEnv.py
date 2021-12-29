@@ -1,7 +1,6 @@
 from pyphysx_envs.envs.BaseEnv import BaseEnv
 from rlpyt.spaces.float_box import FloatBox
 from rlpyt_utils.utils import exponential_reward
-# from rlpyt.envs.base import EnvInfo, Env, EnvStep
 from rlpyt.envs.base import Env, EnvStep
 from pyphysx_envs.utils import get_tool, get_scene, get_robot
 import quaternion as npq
@@ -10,7 +9,6 @@ import torch
 from pyphysx import *
 from pyphysx_render.meshcat_render import MeshcatViewer
 from pyphysx_utils.transformations import multiply_transformations, inverse_transform, pose_to_transformation_matrix
-# from pyphysx_render.utils import gl_color_from_matplotlib
 from pyphysx_envs.utils import params_fill_default
 
 import pickle
@@ -94,7 +92,6 @@ class RobotEnv(BaseEnv):
         self.q = {}
         if self.demonstration_q is not None:
             self.robot.init_q = self.demonstration_q[0]
-        # print(self.robot.get_joint_names())
         for i, name in enumerate(self.robot.get_joint_names()):
             self.q[name] = 0.
         self.dq_limit = dq_limit_percentage * self.robot.max_dq_limit
@@ -239,16 +236,11 @@ class RobotEnv(BaseEnv):
                     self.scene.prev_tool_velocity[3:] = npq.as_rotation_vector(next_tool_quat * tool_quat ** (-1)) / (
                                 self.rate.period() / self.sub_steps)
                 if self.tool_name == 'hammer':
-                    # print(action[2])
                     rewards = {}
                     rewards.update(self.scene.get_environment_rewards())
                     if rewards['nail_hammered']:
                         self.scene.steps_since_solved += 1
-                    # if self.scene.steps_since_solved > 0:
-                    #     print('self.scene.steps_since_solved', self.scene.steps_since_solved)
                     self.scene.hammer_speed_z.append((next_tool_pos[2] - tool_pos[2]) / (self.rate.period() / self.sub_steps))
-                # print("velocity", self.scene.prev_tool_velocity)
-            # print("stupid")
         else:
             raise ValueError("non-simulate not implemented")
 
@@ -292,10 +284,6 @@ class RobotEnv(BaseEnv):
                 [joint.commanded_joint_position for (joint_name, joint) in self.robot.movable_joints.items()])
             rewards['demo_q_positions'] = exponential_reward(q_curr - q_ref, scale=self.scene.demo_importance,
                                                              b=10)
-
-        # print(self.q)
-
-        # print(sum(rewards.values()))
         if self.joint.is_broken():
             rewards['is_terminal'] = True
             rewards['brake_occured'] = -self.broken_joint_penalty
