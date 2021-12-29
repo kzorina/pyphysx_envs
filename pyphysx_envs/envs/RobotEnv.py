@@ -247,8 +247,7 @@ class RobotEnv(BaseEnv):
 
         if self.render:
             self.renderer.update(blocking=True)
-            # for _ in range(self.sleep_steps * 5):
-            #     self.rate.sleep()
+
         tool_pos, tool_quat = self.scene.tool.get_global_pose()
         rewards = {}
 
@@ -261,11 +260,8 @@ class RobotEnv(BaseEnv):
         rewards.update(self.scene.get_environment_rewards(velocity_scale=self.velocity_violation_penalty))
         rewards['is_terminal'] = terminal_reward
         if self.demonstration_poses is not None:
-            # idd = np.clip(np.round(self.scene.simulation_time * self.demonstration_fps), 0,
-            #               len(self.demonstration_poses) - 1).astype(np.int32)
             idd = np.clip(self.iter, 0,
                           len(self.demonstration_poses) - 1).astype(np.int32)
-
             # dpos, dquat = self.demonstration_poses[idd]
             dpos, dquat = multiply_transformations(self.demonstration_poses[idd], inverse_transform(
                 self.scene.tool.to_tip_transform))
@@ -294,13 +290,11 @@ class RobotEnv(BaseEnv):
                 'is_terminal' in rewards and rewards['is_terminal']) or (
                 'is_done' in rewards and rewards['is_done'])
         # print(rewards)
+        total_reward = np.sum([v for k, v in rewards.items() if k != 'is_terminal'])
         if self.store_q:
-            pickle.dump(self.q_values, open(
-                '/home/kzorina/Work/learning_from_video/data/alignment/save_from_04_03_21/panda/saved_q.pkl', 'wb'))
-        if 'is_terminal' in rewards:
-            rewards.pop('is_terminal')
-            # return EnvStep(self.get_obs(), rewards, done_flag, EnvInfo())  # debug line
-        return EnvStep(self.get_obs(), sum(rewards.values()) / self.horizon,
+            pickle.dump(self.q_values, open(self.store_q_path, 'wb'))
+
+        return EnvStep(self.get_obs(), total_reward / self.horizon,
         # return EnvStep(self.get_obs(),  sum(rewards[x] for x in ['nail_hammered', 'overlaping_penalty']) / self.horizon,
         # return EnvStep(self.get_obs(),  sum(rewards[x] for x in ['cutted_grass']) / self.horizon,
                        done_flag, EnvInfo())
