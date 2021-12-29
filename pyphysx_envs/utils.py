@@ -87,8 +87,8 @@ def get_robot(robot_name, **kwargs):
 
 def follow_tool_tip_traj(env, poses, rewards_to_track_name=('spheres'), add_end_steps=0, add_zero_end_steps=0,
                          return_last_step_id=False, verbose=False, return_tool_pose_list=True,
-                         stop_on_positive_reward=False):
-    env.params['tool_init_position'] = poses[0]
+                         stop_on_positive_reward=False, default_start_height=0.2):
+    env.params['tool_init_position'] = ([poses[0][0][0], poses[0][0][1], default_start_height], poses[0][1])
     env.reset()
     action = np.zeros((env._action_space.shape))
     _, rewards = env.step(action) # simulate one step to get initial reward
