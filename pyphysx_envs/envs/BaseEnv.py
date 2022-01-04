@@ -1,7 +1,7 @@
 from rlpyt.envs.base import EnvInfo, Env, EnvStep
 from pyphysx_envs.utils import params_fill_default
 from pyphysx_utils.rate import Rate
-
+from pyphysx import *
 
 class BaseEnv(Env):
     """
@@ -10,7 +10,8 @@ class BaseEnv(Env):
     """
 
     def __init__(self, render=False, render_dict=None, batch_T=100, params=None, rate=24, demonstration_fps=24,
-                 obs_add_time=True, demonstration_poses=None, demonstration_q=None, old_renderer=True, **kwargs):
+                 obs_add_time=True, demonstration_poses=None, demonstration_q=None, old_renderer=True,
+                 debug_spheres_pos=(), **kwargs):
         super().__init__()
         self.render = render
         self.batch_T = batch_T
@@ -31,6 +32,20 @@ class BaseEnv(Env):
                 self.scene.default_params['variable'])})
         # standard multiplier for demo following
         # self.scene.demo_importance = 1.
+        if len(debug_spheres_pos) > 0:
+            self.scene.path_spheres_act = [RigidDynamic() for _ in range(len(debug_spheres_pos))]
+            for i, a in enumerate(self.scene.path_spheres_act):
+                sphere = Shape.create_sphere(0.05, Material())
+                # sphere.set_user_data(dict(color=self.sphere_color))
+                sphere.set_flag(ShapeFlag.SIMULATION_SHAPE, False)
+                sphere.set_user_data({'color': [(1 - i / len(debug_spheres_pos)),
+                                                i / len(debug_spheres_pos), 0., 0.25]})
+                a.attach_shape(sphere)
+                a.set_global_pose(debug_spheres_pos[i])
+                a.set_mass(0.1)
+                a.disable_gravity()
+                self.scene.add_actor(a)
+
 
         if demonstration_poses is not None and demonstration_q is not None:
             raise ValueError(

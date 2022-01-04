@@ -32,8 +32,8 @@ def get_reward_to_track(tool_name):
     if tool_name == 'spade':
         return ['spheres']
     elif tool_name == 'hammer':
-        # return ['nail_hammered', 'overlaping_penalty']
-        return ['nail_hammered', ]
+        return ['nail_hammered', 'overlaping_penalty']
+        # return ['nail_hammered', ]
     elif tool_name == 'scythe':
         return ['cutted_grass']
     else:
@@ -85,8 +85,8 @@ def get_robot(robot_name, **kwargs):
         raise NotImplementedError("Unknown robot '{}'".format(robot_name))
 
 
-def follow_tool_tip_traj(env, poses, rewards_to_track_name=('spheres'), add_end_steps=0, add_zero_end_steps=0,
-                         return_last_step_id=False, verbose=False, return_tool_pose_list=True,
+def follow_tool_tip_traj(env, poses, rewards_to_track_name=('spheres'), add_zero_end_steps=0,
+                         return_last_step_id=False, verbose=False,
                          stop_on_positive_reward=False, default_start_height=0.2):
     env.params['tool_init_position'] = ([poses[0][0][0], poses[0][0][1], default_start_height], poses[0][1])
     env.reset()
@@ -98,8 +98,8 @@ def follow_tool_tip_traj(env, poses, rewards_to_track_name=('spheres'), add_end_
     results['total_reward_to_track_list'] = []
     results['traj_follow_reward'] = 0
     results['tool_tip_pose_list'] = []
-    for i in range(len(poses) + add_end_steps):
-        demo_id = min(i, len(poses) - 1)
+    scale_change = 1
+    for demo_id in range(len(poses)):
         if return_last_step_id:
             results['last_step_id'] = demo_id
         # from video we reconstruct tip pose, but the tool is controled by the handle
@@ -118,33 +118,41 @@ def follow_tool_tip_traj(env, poses, rewards_to_track_name=('spheres'), add_end_
             print(rewards)
 
         if 'is_terminal' in rewards and rewards['is_terminal']:
+            scale_change = (len(poses) + add_zero_end_steps) / max(demo_id, 1)
             if verbose:
                 print('Terminal reward obtained.')
-            return results
+                print(f"scale: {scale_change}")
+
+            break
 
         rewards['demo_positions'] = exponential_reward(handle_pos - desired_handle_pos, scale=0.5, b=10)
         rewards['demo_orientation'] = exponential_reward([npq.rotation_intrinsic_distance(handle_quat,
                                                                 desired_handle_quat)], scale=0.5, b=1)
         # store trajectory following reward divided by amount of steps (1. for perfect repeat)
-        results['traj_follow_reward'] += (rewards['demo_positions'] + rewards['demo_orientation']) / (len(poses) + add_end_steps)
+        results['traj_follow_reward'] += (rewards['demo_positions'] + rewards['demo_orientation']) / (len(poses) + add_zero_end_steps)
         results['total_reward_to_track_list'].append((sum(
-            [rewards[reward_to_track] for reward_to_track in rewards_to_track_name]) - base_reward_to_track) / (len(poses) + add_end_steps))
+            [rewards[reward_to_track] for reward_to_track in rewards_to_track_name]) - base_reward_to_track) / (len(poses) + add_zero_end_steps))
 
         if stop_on_positive_reward and np.sum(results['total_reward_to_track_list']) > 0:
-            scale_change = (len(poses) + add_end_steps) / max(i, 1)
-            for _ in range(add_zero_end_steps):
-                _, rewards = env.step(np.zeros((env._action_space.shape)))
-                rewards['demo_positions'] = exponential_reward(handle_pos - desired_handle_pos, scale=0.5, b=10)
-                rewards['demo_orientation'] = exponential_reward([npq.rotation_intrinsic_distance(handle_quat,
-                                                                                                  desired_handle_quat)],
-                                                                 scale=0.5, b=1)
-                results['tool_tip_pose_list'].append(multiply_transformations(env.scene.tool.get_global_pose(),
-                                                                              env.scene.tool.to_tip_transform))
-                results['traj_follow_reward'] += (rewards['demo_positions'] + rewards['demo_orientation']) / (
-                            len(poses) + add_end_steps)
-                results['total_reward_to_track_list'].append((sum(
-                    [rewards[reward_to_track] for reward_to_track in rewards_to_track_name]) - base_reward_to_track) / (
-                                                                         len(poses) + add_end_steps))
-            return results
+            scale_change = (len(poses) + add_zero_end_steps) / max(demo_id, 1)
+            if verbose:
+                print(f"scale: {scale_change}")
+            break
+    for _ in range(add_zero_end_steps):
+        _, rewards = env.step(np.zeros((env._action_space.shape)))
+        rewards['demo_positions'] = exponential_reward(handle_pos - desired_handle_pos, scale=0.5, b=10)
+        rewards['demo_orientation'] = exponential_reward([npq.rotation_intrinsic_distance(handle_quat,
+                                                                                          desired_handle_quat)],
+                                                         scale=0.5, b=1)
+        results['tool_tip_pose_list'].append(multiply_transformations(env.scene.tool.get_global_pose(),
+                                                                      env.scene.tool.to_tip_transform))
+        results['traj_follow_reward'] += (rewards['demo_positions'] + rewards['demo_orientation']) / (
+                    len(poses) + add_zero_end_steps)
+        results['total_reward_to_track_list'].append((sum(
+            [rewards[reward_to_track] for reward_to_track in rewards_to_track_name]) - base_reward_to_track) / (
+                                                                 len(poses) + add_zero_end_steps))
+    results['traj_follow_reward'] = scale_change * np.sum(results['traj_follow_reward'])
+    results['total_reward_to_track_list'] = scale_change * np.sum(results['total_reward_to_track_list'])
+
     return results
 

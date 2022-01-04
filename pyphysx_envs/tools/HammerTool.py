@@ -51,5 +51,9 @@ class HammerTool(RigidDynamic):
 
     @property
     def to_tip_transform(self):
-        return ([0., -self.head_length / 2, 0.],
+        return ([0., self.head_length / 2, 0.],
                 quat_from_euler("xyz", [0., 0., 0.]))
+
+    @property
+    def tool_length(self):
+        return self.handle_length + self.head_width
