@@ -66,3 +66,7 @@ class ScytheTool(RigidDynamic):
     @property
     def to_tip_transform(self):
         return ([0., 0., self.handle_length - self.head_width / 2], npq.one)
+
+    @property
+    def tool_length(self):
+        return np.linalg.norm(self.to_tip_transform[0])

@@ -53,3 +53,8 @@ class SpadeTool(RigidDynamic):
     def transform(self):
         return ([0., 0., 0.],
                 quat_from_euler('xyz', [np.deg2rad(0), np.deg2rad(0), np.deg2rad(0)]))
+
+    @property
+    def tool_length(self):
+        return np.linalg.norm(self.to_tip_transform[0])
+
