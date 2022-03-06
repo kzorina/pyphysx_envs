@@ -176,3 +176,7 @@ class HammerTaskScene(Scene):
                 'variable': {
                     'nail_position': (1., 1., 0.)
                 }}
+
+    @property
+    def symmetry_quat(self):
+        return [[1, 0, 0, 0], [0, 0, 0, -1]]
