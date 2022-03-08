@@ -262,3 +262,7 @@ class SpadeTaskScene(Scene):
         # goal box lenght = 0.5
         # min dist is (half diag of box + half diag of sand depo) * 1.1
         return 1.1 * (self.sand_deposit_length + 0.5) / np.sqrt(2)
+
+    @property
+    def symmetry_quat(self):
+        return [[1, 0, 0, 0]]

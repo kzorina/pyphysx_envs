@@ -369,3 +369,7 @@ class ScytheTaskScene(Scene):
         for i in range(self.grass_patch_n):
             default_params['variable'][f'grass_patch_location_{i}'] = [i, i, 0.]
         return default_params
+
+    @property
+    def symmetry_quat(self):
+        return [[1, 0, 0, 0]]
