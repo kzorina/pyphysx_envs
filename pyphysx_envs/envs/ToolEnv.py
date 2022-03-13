@@ -72,7 +72,7 @@ class ToolEnv(BaseEnv):
             self.scene.stage = 1
         terminal_reward = False
         action[:3] = np.clip(action[:3], -2., 2.)
-        # action[5] = np.clip(action[5], -2., 2.)
+        action[5] = np.clip(action[5], -2., 2.)
         if self.tool_name == 'hammer':
             # print(action[2])
             self.scene.hammer_speed_z.append(action[2])
