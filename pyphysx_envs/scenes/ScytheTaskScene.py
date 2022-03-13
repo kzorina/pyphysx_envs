@@ -372,4 +372,4 @@ class ScytheTaskScene(Scene):
 
     @property
     def symmetry_quat(self):
-        return [[1, 0, 0, 0]]
+        return [[1, 0, 0, 0], [0, 0, 0, -1]]
