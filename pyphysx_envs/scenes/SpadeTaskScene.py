@@ -211,8 +211,8 @@ class SpadeTaskScene(Scene):
             rewards['sand_box_displacement'] = - 5 * velocity_scale * (1 - exponential_reward(self.sand_box_pose[0] -
                                                                    self.sand_box_act.get_global_pose()[0], scale=1,
                                                                    b=10))
-        dist = np.linalg.norm(self.goal_box_pose - self.goal_box_act.get_global_pose()[0])
-        dist_sand = np.linalg.norm(self.sand_box_pose[:2] - self.sand_box_act.get_global_pose()[0][:2])
+        dist = np.linalg.norm(self.goal_box_pose[:2] - self.goal_box_act.get_global_pose()[0][:2])
+        dist_sand = np.linalg.norm(self.sand_box_pose[0][:2] - self.sand_box_act.get_global_pose()[0][:2])
         rewards['dense_reward'] = 0
         if self.add_dense_reward:
             # spheres should be close to the goal box
