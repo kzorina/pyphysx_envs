@@ -108,8 +108,14 @@ def follow_tool_tip_traj(env, poses, rewards_to_track_name=('spheres'), add_zero
                                                                                env.scene.tool.to_tip_transform))
         handle_pos, handle_quat = env.scene.tool.get_global_pose()  # current pose
         # compute the needed velocity based on difference between desired and real position
-        lin_vel = (desired_handle_pos - handle_pos) / env.rate.period()  # required linear velocity
+        # lin_vel = (desired_handle_pos - handle_pos) / env.rate.period()  # required linear velocity
         ang_vel = npq.as_rotation_vector(desired_handle_quat * handle_quat.inverse()) / env.rate.period()  # required angular velocity
+        ang_vel_div = 1 if np.linalg.norm(ang_vel) < 5 else np.linalg.norm(ang_vel)
+        new_ang_vel = ang_vel / ang_vel_div
+        rot_motion = npq.from_rotation_vector(new_ang_vel * env.rate.period())
+        pos_after_rot, quat_after_rot = multiply_transformations((np.zeros(3), rot_motion), env.scene.tool.get_global_pose())
+        lin_vel = (desired_handle_pos - pos_after_rot) / env.rate.period()
+
         # apply velocity in the environment
         _, rewards = env.step([*lin_vel, *ang_vel])
         results['tool_tip_pose_list'].append(multiply_transformations(env.scene.tool.get_global_pose(),
