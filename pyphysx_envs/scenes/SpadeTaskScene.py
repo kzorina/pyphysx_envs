@@ -232,7 +232,7 @@ class SpadeTaskScene(Scene):
             rewards['dense_reward'] += 0.05 * exponential_reward(self.tool.get_global_pose()[0] -
                                                                    self.sand_box_act.get_global_pose()[0], scale=1,
                                                                    b=10)
-        if self.robot_base_in_goal_box(robot_pose):
+        if robot_pose is not None and self.robot_base_in_goal_box(robot_pose):
             rewards['is_terminal'] = True
         if dist > 0.05 or dist_sand > 0.1:
             rewards['is_terminal'] = True

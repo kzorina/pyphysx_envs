@@ -137,7 +137,7 @@ class HammerTaskScene(Scene):
                 return False
         return False
 
-    def get_environment_rewards(self, velocity_scale=1):
+    def get_environment_rewards(self, velocity_scale=1, **kwargs):
         self.nail_overlaped = self.nail_overlaped or self._nail_hammer_overlaps()
         return {
             'nail_hammered': 1 if self.get_nail_z() < 0.001 else 0,
