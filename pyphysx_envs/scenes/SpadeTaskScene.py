@@ -148,14 +148,21 @@ class SpadeTaskScene(Scene):
                 sphere.set_linear_velocity(np.zeros(3))
                 sphere.set_angular_velocity(np.zeros(3))
 
-
-    def get_num_spheres_in_boxes(self):
+    def get_goal_box_ll_rr(self):
         gpos = self.goal_box_act.get_global_pose()[0]
         ll = np.array([-0.25, -0.25, 0.]) + gpos
         ur = np.array([0.25, 0.25, 0.1]) + gpos
+        return ll, ur
+
+    def get_num_spheres_in_boxes(self):
+        ll, ur = self.get_goal_box_ll_rr()
         pts = np.array([sphere.get_global_pose()[0] for sphere in self.spheres_act])
         inidx = np.all(np.logical_and(ll <= pts, pts <= ur), axis=1)
         return np.sum(inidx)
+
+    def robot_base_in_goal_box(self, robot_pose):
+        ll, ur = self.get_goal_box_ll_rr()
+        return np.all(np.logical_and(ll[:2] <= robot_pose, robot_pose <= ur[:2]))
 
     def point_to_spade_ort(self, row, spade_tip_pose):
         pos_ort, _ = multiply_transformations(spade_tip_pose, cast_transformation((np.array(row),
@@ -188,7 +195,7 @@ class SpadeTaskScene(Scene):
         inidx = np.logical_and(np.logical_not(inidx1), np.logical_not(inidx2))
         return np.sum(inidx)
 
-    def get_environment_rewards(self, velocity_scale=0.0001, **kwargs):
+    def get_environment_rewards(self, velocity_scale=0.0001, robot_pose=None, **kwargs):
         rewards = {'is_terminal':False}
         rewards['box_displacement'] = 0
         if self.add_spheres:
@@ -225,6 +232,8 @@ class SpadeTaskScene(Scene):
             rewards['dense_reward'] += 0.05 * exponential_reward(self.tool.get_global_pose()[0] -
                                                                    self.sand_box_act.get_global_pose()[0], scale=1,
                                                                    b=10)
+        if self.robot_base_in_goal_box(robot_pose):
+            rewards['is_terminal'] = True
         if dist > 0.05 or dist_sand > 0.1:
             rewards['is_terminal'] = True
             rewards['box_displacement'] = -10.

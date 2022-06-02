@@ -209,6 +209,7 @@ class RobotEnv(BaseEnv):
 
     def step(self, action):
         self.prev_action = action
+        action = np.clip(action, -3., 3.)
         terminal_reward = False
         self.iter += 1
         if self.tool_name == 'scythe' and self.iter == self.scene.start_second_stage:
@@ -257,7 +258,8 @@ class RobotEnv(BaseEnv):
                                      np.linalg.norm(np.minimum(0., action + self.dq_limit))
         if self.action_l2_regularization > 0.:
             rewards['action_l2'] = -self.action_l2_regularization * np.linalg.norm(action)
-        rewards.update(self.scene.get_environment_rewards(velocity_scale=self.velocity_violation_penalty))
+        rewards.update(self.scene.get_environment_rewards(velocity_scale=self.velocity_violation_penalty,
+                                                          robot_pose=self.robot.robot_t0[:2, 3].numpy()))
         rewards['is_terminal'] = terminal_reward
         if self.demonstration_poses is not None:
             idd = np.clip(self.iter, 0,
